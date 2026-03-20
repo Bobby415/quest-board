@@ -1,0 +1,2489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Quest Board">
+<meta name="theme-color" content="#0e0e11">
+<title>Quest Board</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0e0e11;--surface:#17171c;--surface2:#1f1f26;
+  --border:#2a2a35;--border2:#353544;
+  --text:#f0eff5;--muted:#6b6b80;--muted2:#4a4a5a;
+  --accent:#7b61ff;--accent2:#a594ff;
+  --gold:#f5c542;--green:#3ddc84;--red:#ff5f5f;--orange:#ff9f43;
+}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--bg);font-family:'DM Sans',sans-serif;color:var(--text);display:flex;flex-direction:column;height:100vh;}
+ 
+/* ── TRAIL SCENE ── */
+#trail-scene{
+  width:100%;height:90px;background:linear-gradient(180deg,#0a0a10 0%,#111118 60%,#1a1a24 100%);
+  border-bottom:1px solid var(--border);position:relative;overflow:hidden;flex-shrink:0;
+}
+#trail-canvas{width:100%;height:100%;display:block;}
+ 
+/* ── LAYOUT ── */
+.app-body{display:flex;flex:1;overflow:hidden;}
+.sidebar{width:220px;min-width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:24px 0;overflow-y:auto;}
+.sidebar::-webkit-scrollbar{width:2px;}
+.sidebar-logo{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:var(--accent2);letter-spacing:.08em;padding:0 20px 18px;border-bottom:1px solid var(--border);margin-bottom:12px;}
+.sidebar-logo span{color:var(--muted);font-weight:400;}
+.sidebar-section{padding:0 12px;margin-bottom:8px;}
+.sidebar-label{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted2);padding:0 8px;margin-bottom:6px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;font-size:13px;color:var(--muted);cursor:pointer;transition:all .15s;border:none;background:none;width:100%;text-align:left;}
+.nav-item:hover{background:var(--surface2);color:var(--text);}
+.nav-item.active{background:rgba(123,97,255,.12);color:var(--accent2);}
+.nav-item .icon{font-size:13px;width:18px;text-align:center;}
+.nav-item .count{margin-left:auto;font-size:11px;background:var(--surface2);border-radius:20px;padding:1px 7px;color:var(--muted);}
+.nav-item.active .count{background:rgba(123,97,255,.2);color:var(--accent2);}
+.nav-item .count.red{background:rgba(255,95,95,.15);color:var(--red);}
+.sidebar-bottom{margin-top:auto;padding:16px 12px 0;border-top:1px solid var(--border);}
+.sidebar-bike{display:flex;align-items:center;gap:8px;padding:8px 10px;}
+.sidebar-bike-label{font-size:11px;color:var(--muted);}
+.sidebar-bike-name{font-size:12px;color:var(--accent2);font-weight:500;}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;border-bottom:1px solid var(--border);background:var(--surface);}
+.topbar-title{font-size:15px;font-weight:600;}
+.topbar-date{font-size:11px;color:var(--muted);margin-top:2px;font-family:'DM Mono',monospace;}
+.pills{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.pill{display:flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border2);border-radius:20px;padding:4px 10px;font-size:12px;color:var(--muted);}
+.pill strong{color:var(--text);}
+.pill.lv{border-color:rgba(123,97,255,.35);background:rgba(123,97,255,.1);}
+.pill.lv strong{color:var(--accent2);}
+.pill.streak-active{border-color:rgba(245,197,66,.4);background:rgba(245,197,66,.08);}
+.pill.streak-active strong{color:var(--gold);}
+.xp-row{padding:7px 24px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;align-items:center;gap:12px;}
+.xp-lbl{font-size:11px;color:var(--muted);white-space:nowrap;font-family:'DM Mono',monospace;}
+.xp-track{flex:1;height:3px;background:var(--surface2);border-radius:2px;overflow:hidden;}
+.xp-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;transition:width .5s cubic-bezier(.22,1,.36,1);}
+.xp-avail{font-size:11px;color:var(--gold);white-space:nowrap;font-family:'DM Mono',monospace;}
+.content{flex:1;overflow-y:auto;padding:18px 24px;}
+.content::-webkit-scrollbar{width:3px;}
+.content::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+ 
+/* SECTIONS */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;margin-top:4px;}
+.section-title{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);display:flex;align-items:center;gap:8px;}
+.section-progress{font-family:'DM Mono',monospace;font-size:11px;color:var(--green);}
+.section-divider{border:none;border-top:1px solid var(--border);margin:18px 0;}
+.add-task-btn{display:flex;align-items:center;gap:6px;background:none;border:1px dashed var(--border2);border-radius:8px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;padding:9px 14px;cursor:pointer;width:100%;transition:all .15s;margin-top:6px;}
+.add-task-btn:hover{border-color:var(--accent);color:var(--accent2);background:rgba(123,97,255,.05);}
+ 
+/* TASKS */
+.task-list{display:flex;flex-direction:column;gap:2px;}
+.task-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;background:var(--surface);border:1px solid transparent;transition:border-color .15s,background .15s;animation:fadeIn .2s ease;}
+.task-item:hover{border-color:var(--border);background:var(--surface2);}
+.task-item.done{opacity:.4;}
+.task-item.done .task-text{text-decoration:line-through;color:var(--muted);}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-3px);}to{opacity:1;transform:translateY(0);}}
+.check-btn{width:19px;height:19px;flex-shrink:0;border-radius:5px;border:1.5px solid var(--border2);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;transition:all .15s;color:transparent;}
+.check-btn:hover{border-color:var(--green);}
+.task-item.done .check-btn{background:var(--green);border-color:var(--green);color:white;}
+.diff-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.dot-easy{background:var(--green);}.dot-medium{background:var(--gold);}.dot-hard{background:var(--red);}
+.task-text{flex:1;font-size:13px;line-height:1.4;}
+.task-meta{display:flex;align-items:center;gap:5px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;}
+.day-tag{font-size:10px;color:var(--muted2);background:var(--surface2);border-radius:4px;padding:1px 6px;font-family:'DM Mono',monospace;}
+.end-tag{font-size:10px;color:var(--orange);background:rgba(255,159,67,.1);border-radius:4px;padding:1px 6px;font-family:'DM Mono',monospace;}
+.xp-tag{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);}
+.del-btn{background:none;border:none;color:var(--muted2);cursor:pointer;font-size:13px;opacity:0;transition:opacity .15s,color .15s;padding:2px 4px;}
+.task-item:hover .del-btn{opacity:1;}
+.del-btn:hover{color:var(--red);}
+.empty{text-align:center;padding:28px 20px;color:var(--muted2);font-size:12px;}
+.empty-icon{font-size:26px;margin-bottom:8px;display:block;}
+.streak-locked-bar{display:flex;align-items:center;gap:8px;background:rgba(61,220,132,.06);border:1px solid rgba(61,220,132,.2);border-radius:8px;padding:9px 14px;font-size:12px;color:var(--green);margin-bottom:16px;}
+ 
+/* AI CRITIQUE */
+.critique-card{background:var(--surface);border-radius:10px;padding:14px 16px;margin-bottom:8px;border:1px solid var(--border);animation:fadeIn .2s ease;}
+.critique-card.pending{border-color:rgba(255,159,67,.3);}
+.critique-card.approved{border-color:rgba(61,220,132,.25);}
+.critique-card.rejected{border-color:rgba(255,95,95,.25);}
+.critique-card.needs-more{border-color:rgba(165,148,255,.3);}
+.critique-task{font-size:13px;font-weight:500;margin-bottom:5px;}
+.critique-proof{font-size:12px;color:var(--muted);font-style:italic;margin-bottom:8px;padding:6px 10px;background:var(--surface2);border-radius:6px;}
+.critique-verdict{font-size:12px;line-height:1.5;margin-bottom:8px;}
+.critique-status{font-size:10px;font-family:'DM Mono',monospace;padding:2px 8px;border-radius:4px;display:inline-block;}
+.status-pending{background:rgba(255,159,67,.12);color:var(--orange);border:1px solid rgba(255,159,67,.25);}
+.status-approved{background:rgba(61,220,132,.1);color:var(--green);border:1px solid rgba(61,220,132,.25);}
+.status-rejected{background:rgba(255,95,95,.1);color:var(--red);border:1px solid rgba(255,95,95,.25);}
+.status-needs-more{background:rgba(165,148,255,.12);color:var(--accent2);border:1px solid rgba(165,148,255,.25);}
+.critique-retry-btn{background:rgba(123,97,255,.15);border:1px solid var(--accent);border-radius:7px;color:var(--accent2);font-family:'DM Sans',sans-serif;font-size:12px;padding:5px 12px;cursor:pointer;transition:all .15s;margin-top:6px;}
+.critique-retry-btn:hover{background:rgba(123,97,255,.25);}
+ 
+/* PROOF MODAL */
+.proof-modal-task{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;}
+.proof-modal-diff{font-size:11px;color:var(--muted);margin-bottom:14px;}
+.proof-thinking{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);padding:12px 0;}
+.proof-verdict-box{border-radius:8px;padding:12px 14px;margin-top:8px;font-size:13px;line-height:1.6;}
+.proof-verdict-approved{background:rgba(61,220,132,.08);border:1px solid rgba(61,220,132,.25);color:var(--green);}
+.proof-verdict-rejected{background:rgba(255,95,95,.08);border:1px solid rgba(255,95,95,.25);color:var(--red);}
+.proof-verdict-needs-more{background:rgba(165,148,255,.08);border:1px solid rgba(165,148,255,.25);color:var(--accent2);}
+.proof-xp-badge{font-family:'DM Mono',monospace;font-size:18px;color:var(--gold);font-weight:600;text-align:center;margin:12px 0 4px;}
+ 
+/* SHOP */
+.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px;}
+.shop-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px;display:flex;flex-direction:column;gap:7px;transition:border-color .15s;}
+.shop-card.owned{border-color:rgba(61,220,132,.25);}
+.shop-card.equipped{border-color:var(--accent);background:rgba(123,97,255,.06);}
+.shop-card-icon{font-size:22px;text-align:center;}
+.shop-card-name{font-size:12px;font-weight:600;}
+.shop-card-desc{font-size:11px;color:var(--muted);line-height:1.4;flex:1;}
+.shop-card-price{font-family:'DM Mono',monospace;font-size:11px;color:var(--gold);}
+.shop-card-price.free{color:var(--green);}
+.shop-btn{border:none;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;padding:6px 10px;cursor:pointer;transition:all .15s;margin-top:auto;}
+.shop-btn.buy{background:var(--accent);color:white;}
+.shop-btn.buy:disabled{background:var(--surface2);color:var(--muted2);cursor:not-allowed;}
+.shop-btn.equip{background:rgba(123,97,255,.15);color:var(--accent2);border:1px solid var(--accent);}
+.shop-btn.equipped-label{background:rgba(61,220,132,.1);color:var(--green);border:1px solid rgba(61,220,132,.3);cursor:default;}
+.shop-section-title{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);margin:16px 0 8px;}
+.shop-section-title:first-child{margin-top:0;}
+.bike-preview-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 18px 12px;display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:14px;}
+.bike-tier-label{font-size:11px;color:var(--accent2);font-family:'DM Mono',monospace;}
+.bike-tier-bar{display:flex;gap:6px;}
+.bike-tier-pip{height:4px;width:30px;border-radius:2px;background:var(--border2);}
+.bike-tier-pip.active{background:var(--accent);}
+.save-chance-badge{font-size:11px;padding:3px 10px;border-radius:20px;font-family:'DM Mono',monospace;}
+.save-0{background:rgba(107,107,128,.15);color:var(--muted);border:1px solid var(--border2);}
+.save-low{background:rgba(255,159,67,.1);color:var(--orange);border:1px solid rgba(255,159,67,.3);}
+.save-mid{background:rgba(245,197,66,.1);color:var(--gold);border:1px solid rgba(245,197,66,.3);}
+.save-high{background:rgba(61,220,132,.1);color:var(--green);border:1px solid rgba(61,220,132,.3);}
+ 
+/* BADGES */
+.badges-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px;}
+.badge-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center;}
+.badge-card.unlocked{border-color:rgba(245,197,66,.3);}
+.badge-card.locked{opacity:.4;filter:grayscale(.5);}
+.badge-icon{font-size:28px;margin-bottom:7px;}
+.badge-name{font-size:12px;font-weight:600;margin-bottom:3px;}
+.badge-desc{font-size:11px;color:var(--muted);line-height:1.4;margin-bottom:6px;}
+.badge-reward-tag{font-size:10px;border-radius:4px;padding:2px 7px;display:inline-block;}
+.badge-reward-xp{background:rgba(245,197,66,.12);color:var(--gold);border:1px solid rgba(245,197,66,.25);}
+.badge-reward-item{background:rgba(123,97,255,.12);color:var(--accent2);border:1px solid rgba(123,97,255,.25);}
+.badge-claim-btn{background:var(--gold);border:none;border-radius:6px;color:#111;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;padding:5px 12px;cursor:pointer;margin-top:6px;display:block;width:100%;}
+.badge-claimed-label{font-size:10px;color:var(--green);margin-top:6px;font-family:'DM Mono',monospace;}
+ 
+/* REWARDS */
+.rewards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:10px;}
+.reward-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px;display:flex;flex-direction:column;gap:7px;position:relative;}
+.reward-card-icon{font-size:24px;text-align:center;}
+.reward-card-name{font-size:13px;font-weight:600;}
+.reward-card-desc{font-size:11px;color:var(--muted);line-height:1.4;flex:1;}
+.reward-card-meta{display:flex;align-items:center;justify-content:space-between;}
+.reward-card-price{font-family:'DM Mono',monospace;font-size:12px;color:var(--gold);}
+.reward-card-type{font-size:10px;border-radius:4px;padding:2px 7px;font-family:'DM Mono',monospace;}
+.reward-type-once{background:rgba(255,95,95,.1);color:var(--red);border:1px solid rgba(255,95,95,.25);}
+.reward-type-multi{background:rgba(61,220,132,.1);color:var(--green);border:1px solid rgba(61,220,132,.25);}
+.reward-type-redeemed{background:var(--surface2);color:var(--muted2);border:1px solid var(--border2);}
+.reward-redeem-btn{background:var(--accent);border:none;border-radius:7px;color:white;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;padding:7px 12px;cursor:pointer;margin-top:auto;}
+.reward-redeem-btn:disabled{background:var(--surface2);color:var(--muted2);cursor:not-allowed;}
+.reward-del-btn{position:absolute;top:10px;right:10px;background:none;border:none;color:var(--muted2);cursor:pointer;font-size:13px;opacity:0;transition:opacity .15s;}
+.reward-card:hover .reward-del-btn{opacity:1;}
+.reward-del-btn:hover{color:var(--red);}
+.reward-gen-btn{display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(123,97,255,.12);border:1px solid rgba(123,97,255,.3);border-radius:8px;color:var(--accent2);font-family:'DM Sans',sans-serif;font-size:13px;padding:10px 16px;cursor:pointer;width:100%;margin-bottom:12px;transition:all .15s;}
+.reward-gen-btn:hover{background:rgba(123,97,255,.2);}
+.reward-gen-btn:disabled{opacity:.5;cursor:not-allowed;}
+ 
+/* MODALS */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;}
+.modal-overlay.show{opacity:1;pointer-events:all;}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:24px;width:460px;max-width:96vw;max-height:90vh;overflow-y:auto;animation:slideUp .22s ease;}
+.modal.sm{width:400px;}
+@keyframes slideUp{from{transform:translateY(10px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.modal-title{font-size:14px;font-weight:600;margin-bottom:18px;}
+.modal-field{margin-bottom:14px;}
+.modal-label{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;display:block;}
+input.modal-input,textarea.modal-input{width:100%;background:#fff!important;color:#111!important;-webkit-text-fill-color:#111!important;border:1.5px solid var(--border2);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;padding:10px 12px;outline:none;transition:border-color .2s;resize:none;}
+input.modal-input::placeholder,textarea.modal-input::placeholder{color:#999!important;-webkit-text-fill-color:#999!important;}
+input.modal-input:focus,textarea.modal-input:focus{border-color:var(--accent);}
+input.modal-input.error{border-color:var(--red)!important;animation:shake .3s ease;}
+@keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-5px);}75%{transform:translateX(5px);}}
+.dupe-msg{font-size:11px;color:var(--red);margin-top:5px;display:none;}
+.dupe-msg.show{display:block;}
+.diff-row{display:flex;gap:6px;}
+.diff-opt{flex:1;background:var(--surface2);border:1.5px solid var(--border2);border-radius:8px;padding:8px 6px;text-align:center;cursor:pointer;font-size:12px;color:var(--muted);transition:all .15s;line-height:1.6;}
+.diff-opt.sel-easy{background:rgba(61,220,132,.1);border-color:var(--green);color:var(--green);}
+.diff-opt.sel-medium{background:rgba(245,197,66,.1);border-color:var(--gold);color:var(--gold);}
+.diff-opt.sel-hard{background:rgba(255,95,95,.1);border-color:var(--red);color:var(--red);}
+.sched-tabs{display:flex;gap:4px;margin-bottom:10px;}
+.sched-tab{background:none;border:1px solid var(--border2);border-radius:6px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:12px;padding:5px 12px;cursor:pointer;transition:all .15s;}
+.sched-tab.active{background:rgba(123,97,255,.15);border-color:var(--accent);color:var(--accent2);}
+.day-pills{display:flex;flex-wrap:wrap;gap:6px;}
+.day-pill{background:var(--surface2);border:1.5px solid var(--border2);border-radius:6px;color:var(--muted);font-size:12px;padding:5px 12px;cursor:pointer;transition:all .15s;user-select:none;}
+.day-pill:hover{border-color:var(--accent);color:var(--accent2);}
+.day-pill.selected{background:rgba(123,97,255,.15);border-color:var(--accent);color:var(--accent2);}
+.day-pill.daily-pill.selected{background:rgba(61,220,132,.1);border-color:var(--green);color:var(--green);}
+.cal-wrap{background:var(--surface2);border-radius:8px;padding:14px;}
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.cal-nav{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:2px 8px;line-height:1;}
+.cal-nav:hover{color:var(--text);}
+.cal-month{font-size:13px;font-weight:500;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+.cal-day-name{font-size:10px;color:var(--muted2);text-align:center;padding:3px 0;font-weight:600;}
+.cal-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:6px;font-size:12px;color:var(--muted);cursor:pointer;transition:all .15s;}
+.cal-cell:hover:not(.empty-cell):not(.past){background:var(--surface);color:var(--text);}
+.cal-cell.today{color:var(--accent2);font-weight:600;}
+.cal-cell.selected{background:rgba(123,97,255,.2);border:1px solid var(--accent);color:var(--accent2);}
+.cal-cell.past{opacity:.25;cursor:default;pointer-events:none;}
+.cal-cell.empty-cell{cursor:default;}
+.cal-hint{font-size:11px;color:var(--muted);margin-top:8px;}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;}
+.btn-cancel{background:none;border:1px solid var(--border2);border-radius:8px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;padding:9px 16px;cursor:pointer;}
+.btn-cancel:hover{color:var(--text);}
+.btn-confirm{background:var(--accent);border:none;border-radius:8px;color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:9px 20px;cursor:pointer;}
+.btn-confirm:hover{background:var(--accent2);}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border-radius:8px;padding:10px 14px;}
+.toggle-label{font-size:13px;color:var(--text);}
+.toggle-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.toggle-switch{position:relative;width:42px;height:24px;flex-shrink:0;}
+.toggle-switch input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:var(--border2);border-radius:12px;cursor:pointer;transition:background .2s;}
+.toggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:white;border-radius:50%;transition:transform .2s;}
+.toggle-switch input:checked+.toggle-slider{background:var(--accent);}
+.toggle-switch input:checked+.toggle-slider:before{transform:translateX(18px);}
+.emoji-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;max-height:150px;overflow-y:auto;}
+.emoji-btn{background:var(--surface2);border:1.5px solid transparent;border-radius:6px;font-size:18px;cursor:pointer;padding:4px;text-align:center;transition:all .15s;}
+.emoji-btn:hover{border-color:var(--accent);}
+.emoji-btn.sel{border-color:var(--accent);background:rgba(123,97,255,.15);}
+.price-row{display:flex;align-items:center;gap:12px;margin-top:8px;}
+.price-slider{flex:1;-webkit-appearance:none;height:4px;border-radius:2px;background:var(--border2);outline:none;}
+.price-slider::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid var(--bg);}
+.price-display{font-family:'DM Mono',monospace;font-size:14px;color:var(--gold);font-weight:500;min-width:60px;text-align:right;}
+.price-hint{font-size:11px;color:var(--muted);margin-top:6px;}
+.price-hint span{color:var(--accent2);}
+ 
+/* DICE ROLL OVERLAY */
+.dice-overlay{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:300;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .4s;}
+.dice-overlay.show{opacity:1;pointer-events:all;}
+.dice-box{background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:40px 50px;text-align:center;max-width:420px;width:90vw;}
+.dice-title{font-size:16px;font-weight:600;margin-bottom:6px;}
+.dice-sub{font-size:13px;color:var(--muted);margin-bottom:28px;}
+.dice-face{font-size:72px;margin-bottom:20px;animation:diceSpin 0.15s linear infinite;display:block;}
+.dice-face.settled{animation:none;}
+@keyframes diceSpin{0%{transform:rotate(0deg) scale(1);}50%{transform:rotate(180deg) scale(1.1);}100%{transform:rotate(360deg) scale(1);}}
+.dice-result{font-size:18px;font-weight:600;margin-bottom:8px;}
+.dice-result.saved{color:var(--green);}
+.dice-result.lost{color:var(--red);}
+.dice-detail{font-size:12px;color:var(--muted);margin-bottom:24px;}
+.dice-close{background:var(--accent);border:none;border-radius:8px;color:white;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:10px 28px;cursor:pointer;display:none;}
+.dice-close:hover{background:var(--accent2);}
+ 
+/* LEVEL UP */
+.levelup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s;}
+.levelup-overlay.show{opacity:1;pointer-events:all;}
+.levelup-box{background:var(--surface);border:1px solid var(--accent);border-radius:16px;padding:32px 40px;text-align:center;max-width:420px;width:90vw;animation:popIn .35s cubic-bezier(.22,1,.36,1);box-shadow:0 0 60px rgba(123,97,255,.25);}
+@keyframes popIn{from{transform:scale(.85);opacity:0;}to{transform:scale(1);opacity:1;}}
+.levelup-emoji{font-size:44px;margin-bottom:10px;}
+.levelup-title{font-size:22px;font-weight:600;color:var(--accent2);margin-bottom:6px;}
+.levelup-sub{font-size:13px;color:var(--muted);margin-bottom:16px;}
+.levelup-rewards{display:flex;flex-direction:column;gap:8px;margin-bottom:20px;}
+.levelup-reward-item{background:var(--surface2);border-radius:8px;padding:10px 14px;font-size:13px;text-align:left;display:flex;align-items:center;gap:10px;}
+.levelup-close{background:var(--accent);border:none;border-radius:8px;color:white;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:10px 24px;cursor:pointer;}
+ 
+/* POPUPS / TOAST */
+.popup{position:fixed;pointer-events:none;font-family:'DM Mono',monospace;font-size:13px;color:var(--accent2);animation:floatUp 1.1s ease forwards;z-index:999;}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0);}70%{opacity:1;transform:translateY(-40px);}100%{opacity:0;transform:translateY(-70px);}}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--surface);border:1px solid var(--gold);border-radius:10px;padding:10px 18px;font-size:13px;color:var(--gold);z-index:1001;opacity:0;transition:all .35s;pointer-events:none;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.4);}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.badge-popup{position:fixed;top:110px;right:20px;background:var(--surface);border:1px solid var(--gold);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;z-index:1002;transform:translateX(120%);transition:transform .4s cubic-bezier(.22,1,.36,1);box-shadow:0 4px 24px rgba(0,0,0,.5);}
+.badge-popup.show{transform:translateX(0);}
+.badge-popup-icon{font-size:26px;}
+.badge-popup-title{color:var(--gold);font-weight:600;margin-bottom:2px;font-size:12px;}
+.badge-popup-sub{color:var(--muted);font-size:11px;}
+.spinner{width:16px;height:16px;border:2px solid var(--border2);border-top-color:var(--accent2);border-radius:50%;animation:spin .6s linear infinite;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg);}}
+ 
+/* ══════════════════════════════════════
+   MOBILE — bottom tab bar + drawer
+══════════════════════════════════════ */
+ 
+/* Bottom tab bar (mobile only) */
+.bottom-nav{
+  display:none;
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--surface);
+  border-top:1px solid var(--border);
+  z-index:90;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.bottom-nav-inner{
+  display:flex;align-items:stretch;height:56px;
+}
+.tab-btn{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;background:none;border:none;cursor:pointer;
+  color:var(--muted);font-family:'DM Sans',sans-serif;font-size:9px;
+  letter-spacing:.03em;padding:0;transition:color .15s;position:relative;
+}
+.tab-btn.active{color:var(--accent2);}
+.tab-btn .tab-icon{font-size:19px;line-height:1;}
+.tab-btn .tab-badge{
+  position:absolute;top:6px;right:calc(50% - 14px);
+  background:var(--red);color:white;font-size:9px;font-weight:600;
+  border-radius:10px;padding:0 4px;min-width:14px;text-align:center;
+  line-height:14px;display:none;
+}
+.tab-btn .tab-badge.show{display:block;}
+ 
+/* Hamburger button (mobile topbar) */
+.menu-btn{
+  display:none;background:none;border:none;color:var(--text);
+  font-size:20px;cursor:pointer;padding:4px 8px;margin-right:8px;line-height:1;
+}
+ 
+/* Drawer overlay */
+.drawer-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);
+  z-index:150;opacity:0;transition:opacity .25s;
+}
+.drawer-overlay.open{opacity:1;}
+ 
+/* Sidebar becomes a drawer on mobile */
+@media(max-width:640px){
+  html,body{overflow:hidden;height:100%;height:-webkit-fill-available;}
+ 
+  /* Trail smaller on mobile */
+  #trail-scene{height:70px;}
+ 
+  /* Hide desktop sidebar */
+  .sidebar{
+    position:fixed;left:-240px;top:0;bottom:0;z-index:160;
+    width:240px;min-width:240px;
+    transition:left .25s cubic-bezier(.22,1,.36,1);
+    padding-top:calc(24px + env(safe-area-inset-top));
+    box-shadow:4px 0 24px rgba(0,0,0,.5);
+  }
+  .sidebar.open{left:0;}
+ 
+  .drawer-overlay{display:block;}
+ 
+  /* Show hamburger */
+  .menu-btn{display:flex;align-items:center;}
+ 
+  /* Topbar adjustments */
+  .topbar{padding:10px 14px;padding-top:calc(10px + env(safe-area-inset-top));}
+  .topbar-date{display:none;}
+ 
+  /* Pills — hide "done" on very small screens to save space */
+  .pill.done-pill{display:none;}
+ 
+  /* XP row tighter */
+  .xp-row{padding:6px 14px;}
+  .xp-avail{display:none;}
+ 
+  /* Content padding + bottom nav clearance */
+  .content{padding:14px 14px calc(70px + env(safe-area-inset-bottom));}
+ 
+  /* Show bottom nav */
+  .bottom-nav{display:block;}
+ 
+  /* App body — hide desktop sidebar gutter */
+  .app-body{position:relative;}
+ 
+  /* Tasks — larger tap targets */
+  .check-btn{width:26px;height:26px;border-radius:7px;}
+  .del-btn{opacity:1!important;font-size:15px;padding:4px 8px;}
+ 
+  /* Modals — full-screen sheet on mobile */
+  .modal{
+    position:fixed;bottom:0;left:0;right:0;
+    width:100%!important;max-width:100%!important;
+    border-radius:20px 20px 0 0;
+    padding:20px 18px calc(20px + env(safe-area-inset-bottom));
+    max-height:92vh;
+    animation:sheetUp .28s cubic-bezier(.22,1,.36,1);
+  }
+  @keyframes sheetUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+  .modal-overlay{align-items:flex-end;}
+ 
+  /* Dice / levelup modals stay centered */
+  .dice-overlay .dice-box,
+  .levelup-overlay .levelup-box{width:92vw;padding:24px 20px;}
+ 
+  /* Toast above bottom nav */
+  .toast{bottom:calc(68px + env(safe-area-inset-bottom));white-space:normal;max-width:90vw;text-align:center;}
+ 
+  /* Badge popup smaller */
+  .badge-popup{top:auto;bottom:calc(72px + env(safe-area-inset-bottom));right:12px;left:12px;transform:translateY(120px);border-radius:12px;}
+  .badge-popup.show{transform:translateY(0);}
+ 
+  /* Grids — 2 columns min on mobile */
+  .shop-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));}
+  .badges-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));}
+  .rewards-grid{grid-template-columns:1fr;}
+ 
+  /* Bike upgrade cards — stack vertically already fine */
+ 
+  /* Emoji grid bigger touch targets */
+  .emoji-btn{padding:6px;font-size:20px;}
+ 
+  /* Day pills bigger */
+  .day-pill{padding:8px 14px;font-size:13px;}
+  .diff-opt{padding:10px 6px;}
+ 
+  /* Section headers */
+  .section-header{margin-bottom:12px;}
+ 
+  /* Add task button */
+  .add-task-btn{padding:12px 14px;font-size:14px;}
+ 
+  /* Popup position */
+  .popup{top:calc(90px + env(safe-area-inset-top))!important;}
+ 
+  /* Topbar pills hide level on very small */
+  @media(max-width:360px){
+    .pill.lv{display:none;}
+  }
+}
+ 
+/* Tablet — keep sidebar but make it narrower */
+@media(min-width:641px) and (max-width:900px){
+  .sidebar{width:180px;min-width:180px;}
+  .nav-item{font-size:12px;}
+  .content{padding:16px 18px;}
+}
+</style>
+</head>
+<body>
+ 
+<!-- TRAIL SCENE -->
+<div id="trail-scene">
+  <canvas id="trail-canvas"></canvas>
+</div>
+ 
+<div class="app-body">
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">quest<span>/board</span></div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">Tasks</div>
+    <button class="nav-item active" data-view="today"><span class="icon">◈</span> Today <span class="count" id="cnt-today">0</span></button>
+    <button class="nav-item" data-view="critique"><span class="icon">🤖</span> Critique <span class="count" id="cnt-review">0</span></button>
+    <button class="nav-item" data-view="daily"><span class="icon">🔁</span> Daily <span class="count" id="cnt-daily">0</span></button>
+    <button class="nav-item" data-view="addon"><span class="icon">＋</span> Add-ons <span class="count" id="cnt-addon">0</span></button>
+    <button class="nav-item" data-view="done"><span class="icon">◆</span> Completed <span class="count" id="cnt-done">0</span></button>
+  </div>
+  <div class="sidebar-section" style="margin-top:4px;">
+    <div class="sidebar-label">Rewards</div>
+    <button class="nav-item" data-view="shop"><span class="icon">🛒</span> Bike Shop</button>
+    <button class="nav-item" data-view="rewards"><span class="icon">🎁</span> Reward Store</button>
+    <button class="nav-item" data-view="badges"><span class="icon">🏅</span> Badges <span class="count" id="cnt-badges">0</span></button>
+  </div>
+  <div class="sidebar-section" style="margin-top:4px;">
+    <div class="sidebar-label">Filter</div>
+    <button class="nav-item" data-view="easy"><span class="icon" style="color:#3ddc84">●</span> Easy</button>
+    <button class="nav-item" data-view="medium"><span class="icon" style="color:#f5c542">●</span> Medium</button>
+    <button class="nav-item" data-view="hard"><span class="icon" style="color:#ff5f5f">●</span> Hard</button>
+  </div>
+  <div class="sidebar-bottom">
+    <div class="sidebar-bike">
+      <span id="sb-bike-icon">🚲</span>
+      <div>
+        <div class="sidebar-bike-label" id="sb-tier-name">Rigid</div>
+        <div class="sidebar-bike-name" id="sidebar-title">Trail Novice</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;padding:10px 10px 4px;">
+      <button onclick="exportSave()" style="flex:1;background:rgba(123,97,255,.12);border:1px solid rgba(123,97,255,.3);border-radius:8px;color:var(--accent2);font-family:'DM Sans',sans-serif;font-size:11px;padding:7px 4px;cursor:pointer;">⬇ Export</button>
+      <button onclick="document.getElementById('import-file').click()" style="flex:1;background:rgba(61,220,132,.08);border:1px solid rgba(61,220,132,.25);border-radius:8px;color:var(--green);font-family:'DM Sans',sans-serif;font-size:11px;padding:7px 4px;cursor:pointer;">⬆ Import</button>
+    </div>
+    <div style="font-size:10px;color:var(--muted2);padding:2px 10px 8px;text-align:center;line-height:1.4;">Back up your progress as a file</div>
+  </div>
+  <input type="file" id="import-file" accept=".json" style="display:none;" onchange="importSave(event)"/>
+</aside>
+ 
+<!-- MAIN -->
+<main class="main">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;">
+      <button class="menu-btn" id="menu-btn" aria-label="Menu">☰</button>
+      <div>
+        <div class="topbar-title" id="view-title">Today</div>
+        <div class="topbar-date" id="topbar-date"></div>
+      </div>
+    </div>
+    <div class="pills">
+      <div class="pill" id="streak-pill">🔥 <strong id="streak-num">0</strong>&nbsp;streak</div>
+      <div class="pill done-pill">☑ <strong id="done-num">0</strong>&nbsp;done</div>
+      <div class="pill lv">Lv&nbsp;<strong id="level-num">1</strong></div>
+    </div>
+  </div>
+  <div class="xp-row">
+    <span class="xp-lbl" id="xp-lbl">XP 0 / 100</span>
+    <div class="xp-track"><div class="xp-fill" id="xp-fill" style="width:0%"></div></div>
+    <span class="xp-avail" id="xp-avail">0 XP available</span>
+  </div>
+  <div class="content" id="content-area"></div>
+</main>
+</div>
+ 
+<!-- DRAWER OVERLAY (mobile) -->
+<div class="drawer-overlay" id="drawer-overlay"></div>
+ 
+<!-- BOTTOM NAV (mobile only) -->
+<nav class="bottom-nav">
+  <div class="bottom-nav-inner">
+    <button class="tab-btn active" data-view="today" id="tabnav-today">
+      <span class="tab-icon">◈</span>
+      <span>Today</span>
+      <span class="tab-badge" id="badge-today"></span>
+    </button>
+    <button class="tab-btn" data-view="daily" id="tabnav-daily">
+      <span class="tab-icon">🔁</span>
+      <span>Daily</span>
+    </button>
+    <button class="tab-btn" data-view="shop" id="tabnav-shop">
+      <span class="tab-icon">🛒</span>
+      <span>Shop</span>
+    </button>
+    <button class="tab-btn" data-view="rewards" id="tabnav-rewards">
+      <span class="tab-icon">🎁</span>
+      <span>Rewards</span>
+    </button>
+    <button class="tab-btn" data-view="badges" id="tabnav-badges">
+      <span class="tab-icon">🏅</span>
+      <span>Badges</span>
+      <span class="tab-badge" id="badge-badges"></span>
+    </button>
+  </div>
+</nav>
+ 
+<!-- ADD TASK MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-title" id="modal-heading">New Quest</div>
+    <div class="modal-field">
+      <label class="modal-label">Task name</label>
+      <input type="text" class="modal-input" id="modal-input" placeholder="What needs to be done?" maxlength="80" autocomplete="off"/>
+      <div class="dupe-msg" id="dupe-msg">⚠ This quest already exists!</div>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Difficulty</label>
+      <div class="diff-row">
+        <div class="diff-opt sel-easy" data-diff="easy" onclick="selectDiff('easy')">● Easy<br><span style="font-size:10px;opacity:.7">+10 xp</span></div>
+        <div class="diff-opt" data-diff="medium" onclick="selectDiff('medium')">● Medium<br><span style="font-size:10px;opacity:.7">+25 xp</span></div>
+        <div class="diff-opt" data-diff="hard" onclick="selectDiff('hard')">● Hard<br><span style="font-size:10px;opacity:.7">+50 xp</span></div>
+      </div>
+      <div style="font-size:11px;color:var(--accent2);margin-top:8px;padding:8px 10px;background:rgba(123,97,255,.07);border-radius:6px;border:1px solid rgba(123,97,255,.15);">🤖 The AI will critique this task before it is added. It checks specificity, difficulty honesty, and duplicates.</div>
+    </div>
+    <div class="modal-field" id="schedule-field">
+      <label class="modal-label">Schedule</label>
+      <div class="sched-tabs">
+        <button class="sched-tab active" onclick="switchTab('days')">Days of week</button>
+        <button class="sched-tab" onclick="switchTab('calendar')">Auto-delete date</button>
+      </div>
+      <div id="tab-days">
+        <div class="day-pills">
+          <div class="day-pill daily-pill" data-day="daily" onclick="toggleDay('daily')">Daily</div>
+          <div class="day-pill" data-day="mon" onclick="toggleDay('mon')">Mon</div>
+          <div class="day-pill" data-day="tue" onclick="toggleDay('tue')">Tue</div>
+          <div class="day-pill" data-day="wed" onclick="toggleDay('wed')">Wed</div>
+          <div class="day-pill" data-day="thu" onclick="toggleDay('thu')">Thu</div>
+          <div class="day-pill" data-day="fri" onclick="toggleDay('fri')">Fri</div>
+          <div class="day-pill" data-day="sat" onclick="toggleDay('sat')">Sat</div>
+          <div class="day-pill" data-day="sun" onclick="toggleDay('sun')">Sun</div>
+        </div>
+      </div>
+      <div id="tab-calendar" style="display:none;">
+        <div class="cal-wrap">
+          <div class="cal-header">
+            <button class="cal-nav" onclick="calNav(-1)">‹</button>
+            <span class="cal-month" id="cal-label"></span>
+            <button class="cal-nav" onclick="calNav(1)">›</button>
+          </div>
+          <div class="cal-grid" id="cal-grid"></div>
+        </div>
+        <div class="cal-hint">Task auto-deletes on selected date.</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-confirm" onclick="submitTask()">Submit for Critique</button>
+    </div>
+  </div>
+</div>
+ 
+<!-- CRITIQUE VERDICT MODAL -->
+<div class="modal-overlay" id="critique-overlay">
+  <div class="modal sm">
+    <div class="modal-title">🤖 AI Critique</div>
+    <div id="critique-task-name" class="proof-modal-task"></div>
+    <div id="critique-task-diff" class="proof-modal-diff"></div>
+    <div id="critique-thinking" class="proof-thinking">
+      <div class="spinner"></div>
+      <span>Analysing your task...</span>
+    </div>
+    <div id="critique-result" style="display:none;">
+      <div id="critique-verdict-box" class="proof-verdict-box"></div>
+      <div id="critique-checks" style="margin-top:10px;display:flex;flex-direction:column;gap:5px;"></div>
+      <div id="critique-xp" class="proof-xp-badge" style="display:none;"></div>
+    </div>
+    <div class="modal-footer" style="margin-top:16px;">
+      <button class="btn-cancel" id="critique-dismiss-btn" onclick="dismissCritique()" style="display:none;">Dismiss</button>
+      <button class="btn-confirm" id="critique-accept-btn" onclick="acceptCritique()" style="display:none;">Accept &amp; Add Task</button>
+      <button class="btn-cancel" id="critique-retry-btn" onclick="retryCritique()" style="display:none;">Edit &amp; Retry</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="reward-modal-overlay">
+  <div class="modal sm">
+    <div class="modal-title">New Reward</div>
+    <div class="modal-field">
+      <label class="modal-label">Icon</label>
+      <div class="emoji-grid" id="emoji-grid"></div>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Reward name</label>
+      <input type="text" class="modal-input" id="reward-name-input" placeholder="e.g. 1 hour of gaming" maxlength="60" autocomplete="off"/>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Description (optional)</label>
+      <textarea class="modal-input" id="reward-desc-input" placeholder="Any extra details..." rows="2" maxlength="120"></textarea>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">XP Cost</label>
+      <div class="price-row">
+        <input type="range" class="price-slider" id="price-slider" min="50" max="1000" step="25" value="100" oninput="updatePriceDisplay()"/>
+        <div class="price-display" id="price-display">100 XP</div>
+      </div>
+      <div class="price-hint">Min for your level: <span id="price-min-label">50 XP</span></div>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Type</label>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label" id="reward-type-label">One-time use</div>
+          <div class="toggle-sub" id="reward-type-sub">Disappears after redemption</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="reward-type-toggle" onchange="updateRewardTypeLabel()"/>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeRewardModal()">Cancel</button>
+      <button class="btn-confirm" onclick="submitReward()">Add Reward</button>
+    </div>
+  </div>
+</div>
+ 
+<!-- DICE ROLL OVERLAY -->
+<div class="dice-overlay" id="dice-overlay">
+  <div class="dice-box">
+    <div class="dice-title" id="dice-title">🌙 Midnight Check</div>
+    <div class="dice-sub" id="dice-sub">You missed some daily quests today...<br>Your suspension might save your streak!</div>
+    <div class="dice-face" id="dice-face">🎲</div>
+    <div class="dice-result" id="dice-result"></div>
+    <div class="dice-detail" id="dice-detail"></div>
+    <button class="dice-close" id="dice-close" onclick="closeDice()">Continue</button>
+  </div>
+</div>
+ 
+<!-- LEVEL UP MODAL -->
+<div class="levelup-overlay" id="levelup-overlay">
+  <div class="levelup-box">
+    <div class="levelup-emoji" id="lu-emoji">🚲</div>
+    <div class="levelup-title" id="lu-title">Level Up!</div>
+    <div class="levelup-sub" id="lu-sub">You are now a Trail Novice</div>
+    <div class="levelup-rewards" id="lu-rewards"></div>
+    <button class="levelup-close" onclick="closeLevelUp()">Awesome!</button>
+  </div>
+</div>
+ 
+<!-- BADGE POPUP -->
+<div class="badge-popup" id="badge-popup">
+  <div class="badge-popup-icon" id="bp-icon">🏅</div>
+  <div>
+    <div class="badge-popup-title">Badge Unlocked!</div>
+    <div class="badge-popup-sub" id="bp-sub"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+ 
+<script>
+// ════════════════════════════════════════════
+//  DATA
+// ════════════════════════════════════════════
+const XP_MAP={easy:10,medium:25,hard:50};
+const LEVELS=['Trail Novice','Dirt Jumper','Enduro Rider','Flow Trail Pro','Downhill Demon','Park Shredder','Mountain King','Trail Legend'];
+const DAY_KEYS=['sun','mon','tue','wed','thu','fri','sat'];
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const FULL_DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+ 
+// Bike tiers
+const BIKE_TIERS=[
+  {minLevel:1, name:'Rigid',          icon:'🚲', saveChance:0,    saveLabel:'No save chance'},
+  {minLevel:3, name:'Hardtail',       icon:'🚵', saveChance:0.10, saveLabel:'10% save chance'},
+  {minLevel:5, name:'Full Suspension',icon:'🏔️', saveChance:0.25, saveLabel:'25% save chance'},
+  {minLevel:7, name:'Downhill',       icon:'💀', saveChance:0.40, saveLabel:'40% save chance'},
+];
+ 
+// price=0 means free (starter). unlockLevel=1 means always unlocked.
+// Bike tier items have a special 'tier' field — purchasing them changes the bike body.
+const SHOP_ITEMS=[
+  // ── Bike frames (cosmetic colour) ──
+  {id:'frame_purple', type:'frame', name:'Purple Frame',  desc:'Deep violet — your starter.',         icon:'🟣', color:'#a594ff', price:0,   unlockLevel:1},
+  {id:'frame_red',    type:'frame', name:'Red Frame',     desc:'Aggressive blood-red finish.',         icon:'🔴', color:'#ff5f5f', price:150, unlockLevel:2},
+  {id:'frame_green',  type:'frame', name:'Forest Frame',  desc:'Earthy green for the trails.',         icon:'🟢', color:'#3ddc84', price:150, unlockLevel:3},
+  {id:'frame_gold',   type:'frame', name:'Gold Frame',    desc:'Luxury gold — for legends.',           icon:'🟡', color:'#f5c542', price:300, unlockLevel:5},
+  {id:'frame_blue',   type:'frame', name:'Ocean Frame',   desc:'Deep ocean blue.',                     icon:'🔵', color:'#38bdf8', price:150, unlockLevel:4},
+ 
+  // ── Wheels (cosmetic) ──
+  {id:'wheel_stock',  type:'wheel', name:'Stock Wheels',  desc:'Standard alloy rims.',                 icon:'⚪', color:'#f0eff5', price:0,   unlockLevel:1},
+  {id:'wheel_gold',   type:'wheel', name:'Gold Rims',     desc:'Shiny gold rims.',                     icon:'🌕', color:'#f5c542', price:200, unlockLevel:2},
+  {id:'wheel_red',    type:'wheel', name:'Red Rims',      desc:'Aggressive red spokes.',               icon:'🔴', color:'#ff5f5f', price:200, unlockLevel:3},
+  {id:'wheel_neon',   type:'wheel', name:'Neon Rims',     desc:'Glowing neon green.',                  icon:'💚', color:'#3ddc84', price:250, unlockLevel:5},
+  {id:'wheel_carbon', type:'wheel', name:'Carbon Rims',   desc:'Ultra-light carbon black.',            icon:'⬛', color:'#666',    price:400, unlockLevel:6},
+ 
+  // ── Fork & tyres (cosmetic) ──
+  {id:'fork_stock',   type:'fork',  name:'Basic Fork',    desc:'Standard rigid fork.',                 icon:'🔘', color:'#6b6b80', price:0,   unlockLevel:1},
+  {id:'fork_silver',  type:'fork',  name:'Silver Fork',   desc:'Polished silver suspension.',          icon:'⚙️', color:'#c0c0c0', price:175, unlockLevel:3},
+  {id:'fork_orange',  type:'fork',  name:'Orange Fork',   desc:'Bold orange suspension.',              icon:'🟠', color:'#ff9f43', price:175, unlockLevel:5},
+  {id:'fork_carbon',  type:'fork',  name:'Carbon Fork',   desc:'Carbon fibre — ultra-light.',          icon:'🖤', color:'#444',    price:350, unlockLevel:7},
+ 
+  // ── Bike tier upgrades (change the actual bike shape + save chance) ──
+  {id:'bike_hardtail',  type:'bike', name:'Hardtail',        desc:'Front suspension. 10% streak save.',   icon:'🚵', tier:1, price:700,  unlockLevel:3},
+  {id:'bike_fullsus',   type:'bike', name:'Full Suspension',  desc:'Front + rear shock. 25% streak save.',icon:'🏔️', tier:2, price:1200, unlockLevel:5},
+  {id:'bike_downhill',  type:'bike', name:'Downhill Bike',    desc:'Full DH setup. 40% streak save.',     icon:'💀', tier:3, price:2000, unlockLevel:7},
+ 
+  // ── App themes ──
+  {id:'theme_purple',type:'theme', name:'Purple Dusk',   desc:'Default.',         icon:'💜', accent:'#7b61ff', accent2:'#a594ff', price:0,   unlockLevel:1},
+  {id:'theme_red',   type:'theme', name:'Red Dark',      desc:'Dark red.',        icon:'❤️', accent:'#e53e3e', accent2:'#fc8181', price:200, unlockLevel:2},
+  {id:'theme_green', type:'theme', name:'Forest',        desc:'Forest greens.',   icon:'💚', accent:'#22863a', accent2:'#3ddc84', price:200, unlockLevel:3},
+  {id:'theme_gold',  type:'theme', name:'Gold Luxury',   desc:'Rich gold.',       icon:'💛', accent:'#b7950b', accent2:'#f5c542', price:300, unlockLevel:5},
+  {id:'theme_blue',  type:'theme', name:'Ocean',         desc:'Cool blue.',       icon:'💙', accent:'#0ea5e9', accent2:'#38bdf8', price:200, unlockLevel:4},
+];
+ 
+const BADGE_DEFS=[
+  {id:'streak_7',icon:'🔥',name:'On Fire',desc:'7-day streak',check:s=>s.streak>=7,reward:{type:'xp',value:75,label:'+75 Bonus XP'}},
+  {id:'streak_30',icon:'⚡',name:'Unstoppable',desc:'30-day streak',check:s=>s.streak>=30,reward:{type:'xp',value:300,label:'+300 Bonus XP'}},
+  {id:'streak_100',icon:'💎',name:'Diamond Rider',desc:'100-day streak',check:s=>s.streak>=100,reward:{type:'item',value:'wheel_carbon',label:'Carbon Rims free'}},
+  {id:'tasks_10',icon:'✅',name:'Getting Started',desc:'Complete 10 tasks',check:s=>s.totalDone>=10,reward:{type:'xp',value:50,label:'+50 Bonus XP'}},
+  {id:'tasks_50',icon:'🎯',name:'Halfway Hero',desc:'Complete 50 tasks',check:s=>s.totalDone>=50,reward:{type:'xp',value:150,label:'+150 Bonus XP'}},
+  {id:'tasks_100',icon:'🏆',name:'Centurion',desc:'Complete 100 tasks',check:s=>s.totalDone>=100,reward:{type:'item',value:'fork_carbon',label:'Carbon Fork free'}},
+  {id:'level_3',icon:'⭐',name:'Rising Star',desc:'Reach Level 3',check:s=>s.level>=3,reward:{type:'xp',value:60,label:'+60 Bonus XP'}},
+  {id:'level_5',icon:'🌟',name:'Trail Pro',desc:'Reach Level 5',check:s=>s.level>=5,reward:{type:'item',value:'theme_gold',label:'Gold Luxury theme free'}},
+  {id:'level_8',icon:'👑',name:'Legend',desc:'Reach Level 8',check:s=>s.level>=8,reward:{type:'item',value:'frame_gold',label:'Gold Frame free'}},
+  {id:'hard_5',icon:'💪',name:'Hard Hitter',desc:'5 hard tasks',check:s=>s.hardDone>=5,reward:{type:'xp',value:80,label:'+80 Bonus XP'}},
+  {id:'hard_20',icon:'🦾',name:'Iron Will',desc:'20 hard tasks',check:s=>s.hardDone>=20,reward:{type:'xp',value:200,label:'+200 Bonus XP'}},
+  {id:'hard_50',icon:'🔱',name:'Downhill King',desc:'50 hard tasks',check:s=>s.hardDone>=50,reward:{type:'item',value:'wheel_neon',label:'Neon Rims free'}},
+];
+ 
+const LEVEL_UNLOCKS={2:['frame_red','wheel_gold','theme_red'],3:['frame_green','wheel_red','fork_silver','theme_green','bike_hardtail'],4:['frame_blue','theme_blue'],5:['wheel_neon','fork_orange','frame_gold','theme_gold','bike_fullsus'],6:['wheel_carbon'],7:['fork_carbon','bike_downhill']};
+const REWARD_EMOJIS=['🎮','🍕','🍦','🎬','😴','🛁','☕','🍺','🎧','📱','🛍️','🍫','🎲','🏖️','🎉','🍿','🥤','🎸','🚗','✈️','🍣','🍔','🎁','💆','📚','🎯','🌮','🍰','🥳','🏆','🎊','🧘'];
+ 
+// ════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════
+let state={
+  tasks:[],
+  xp:0,xpTotal:0,xpSpent:0,xpSpentOnShop:0,level:1,
+  streak:0,totalDone:0,hardDone:0,nextId:1,
+  streakDate:null,currentView:'today',
+  owned:['frame_purple','wheel_stock','fork_stock','theme_purple'],
+  equipped:{frame:'frame_purple',wheel:'wheel_stock',fork:'fork_stock',theme:'theme_purple'},
+  unlockedBadges:[],claimedBadges:[],
+  customRewards:[],rewardNextId:1,
+  savedStreakDate:null, // date when suspension saved the streak
+};
+ 
+let mSection='daily',mDiff='easy',mDays=new Set(),mTab='days',mEndDate=null;
+let calY,calM,rEmoji='🎁';
+ 
+// ════════════════════════════════════════════
+//  UTILS
+// ════════════════════════════════════════════
+const xpForLevel=l=>l*100;
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const pad=n=>String(n).padStart(2,'0');
+function todayStr(){const d=new Date();return`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;}
+function yesterdayStr(){const d=new Date();d.setDate(d.getDate()-1);return`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;}
+function todayKey(){return DAY_KEYS[new Date().getDay()];}
+function save(){try{localStorage.setItem('qb_v10',JSON.stringify(state));}catch(e){}}
+function load(){try{const s=localStorage.getItem('qb_v10');if(s){const p=JSON.parse(s);state={...state,...p};}}catch(e){}}
+function getShopItem(id){return SHOP_ITEMS.find(i=>i.id===id);}
+function xpAvailable(){return Math.max(0,state.xpTotal-state.xpSpent);}
+function getBikeTier(){
+  // Tier is determined by the highest bike tier item the player has purchased
+  const tierIds=['bike_hardtail','bike_fullsus','bike_downhill'];
+  for(let i=tierIds.length-1;i>=0;i--){
+    if(state.owned.includes(tierIds[i])){
+      const t=SHOP_ITEMS.find(x=>x.id===tierIds[i]);
+      return BIKE_TIERS[t.tier];
+    }
+  }
+  return BIKE_TIERS[0]; // rigid default
+}
+function minRewardPrice(){return Math.min(200,Math.max(50,state.level*25));}
+function applyTheme(){const item=getShopItem(state.equipped.theme);if(!item)return;document.documentElement.style.setProperty('--accent',item.accent);document.documentElement.style.setProperty('--accent2',item.accent2);}
+ 
+// ════════════════════════════════════════════
+//  TRAIL CANVAS ANIMATION
+// ════════════════════════════════════════════
+const canvas=document.getElementById('trail-canvas');
+const ctx=canvas.getContext('2d');
+let animFrame,celebrationTimer=0;
+// roundRect polyfill
+if(!CanvasRenderingContext2D.prototype.roundRect){
+  CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){
+    this.beginPath();this.moveTo(x+r,y);this.lineTo(x+w-r,y);this.arcTo(x+w,y,x+w,y+r,r);
+    this.lineTo(x+w,y+h-r);this.arcTo(x+w,y+h,x+w-r,y+h,r);this.lineTo(x+r,y+h);
+    this.arcTo(x,y+h,x,y+h-r,r);this.lineTo(x,y+r);this.arcTo(x,y,x+r,y,r);this.closePath();
+  };
+}
+ 
+// ── TRAIL GENERATION ──
+// Trail is built as an array of world-space (x,y) control points then sampled
+// every pixel via Catmull-Rom spline.  Overall it drifts downhill.
+// Drop-offs are straight vertical ledges: terrain Y holds constant then jumps down.
+ 
+const TRAIL_XP_GOAL = 12000; // 20 camps × 600 XP each
+let trailPoints=[];   // [{x,y}] spline control points
+let trailSamples=[];  // [{x,y}] dense sample every 4px
+let trailCamps=[];    // [{wx,wy,xpGate,name}]
+let trailFinish=null; // {wx,wy}
+const TRAIL_LEN=10000; // longer trail so camps have room to breathe
+ 
+function buildTrail(){
+  trailPoints=[];
+  trailCamps=[];
+  const H=canvas.height||90;
+ 
+  // Trail starts near TOP and ends near BOTTOM — enforced downhill overall
+  const startY = H*0.22;  // near top
+  const endY   = H*0.82;  // near bottom
+  const totalDrop = endY - startY; // positive = going down in canvas coords
+ 
+  const seed=state.xpTotal|0;
+  let rng=(()=>{let s=seed+42;return()=>{s=(s^s<<13)^(s>>>17)^(s^s<<5);return((s>>>0)/4294967296);};})();
+ 
+  // Build control points with a budget: every step must contribute to the overall
+  // downhill. We track how much "budget" is left and force downhill if running short.
+  let cx=0, cy=startY;
+  trailPoints.push({x:cx, y:cy, drop:false});
+ 
+  const minY=H*0.15, maxY=H*0.88;
+ 
+  while(cx < TRAIL_LEN-500){
+    const remaining   = TRAIL_LEN - cx;
+    const yRemaining  = endY - cy; // how far we still need to drop
+    // Downhill pressure: how urgently we need to go down
+    const pressure    = yRemaining / (remaining / 150); // >1 = urgent
+ 
+    let dx, dy, drop=false;
+    const r=rng();
+ 
+    if(pressure > 1.4){
+      // Must go down — no uphill or flat allowed
+      dx = 120+rng()*100;
+      dy = 10+rng()*16;
+    } else if(r < 0.10 && pressure < 0.6){
+      // Slight uphill bump (only when we have excess height budget)
+      dx = 80+rng()*50;
+      dy = -(5+rng()*10);
+    } else if(r < 0.25){
+      // Long gentle roll downhill
+      dx = 200+rng()*120;
+      dy = (rng()*0.4+0.1)*16;
+    } else if(r < 0.55){
+      // Medium downhill slope
+      dx = 120+rng()*80;
+      dy = 6+rng()*14;
+    } else if(r < 0.75){
+      // Steeper descent
+      dx = 90+rng()*60;
+      dy = 14+rng()*18;
+    } else if(r < 0.88){
+      // Flat-ish section (slight drift down)
+      dx = 180+rng()*80;
+      dy = 1+rng()*5;
+    } else {
+      // Drop-off
+      dx = 70+rng()*50;
+      dy = 18+rng()*22;
+      drop = true;
+    }
+ 
+    const nextY = Math.min(maxY, Math.max(minY, cy+dy));
+ 
+    if(drop){
+      // Flat lip, then hard drop — NO smooth ramp before drop
+      const lipX = cx + dx*0.85;
+      trailPoints.push({x:lipX,    y:cy,    drop:false}); // flat ground up to lip
+      trailPoints.push({x:cx+dx,   y:nextY, drop:true});  // snap down at lip
+    } else {
+      trailPoints.push({x:cx+dx, y:nextY, drop:false});
+    }
+    cx += dx; cy = nextY;
+  }
+ 
+  // Finish: flat run-out at the bottom
+  trailPoints.push({x:cx+250, y:cy, drop:false});
+  trailPoints.push({x:cx+500, y:cy, drop:false});
+  trailFinish={wx:cx+460, wy:cy};
+ 
+  // ── SAMPLE densely via Catmull-Rom ──
+  trailSamples=[];
+  const pts=trailPoints;
+  for(let i=0;i<pts.length-1;i++){
+    const p0=pts[Math.max(0,i-1)];
+    const p1=pts[i];
+    const p2=pts[i+1];
+    const p3=pts[Math.min(pts.length-1,i+2)];
+    const isDrop=p2.drop;
+    const steps=Math.ceil((p2.x-p1.x)/3);
+    for(let s=0;s<steps;s++){
+      const t=s/steps;
+      if(isDrop){
+        const x=p1.x+t*(p2.x-p1.x);
+        // Terrain is flat right up to the lip then drops instantly
+        const y = t < 0.04 ? p1.y : p2.y;
+        trailSamples.push({x, y, inAir: t>0.03 && t<0.97});
+      } else {
+        const t2=t*t, t3=t2*t;
+        const x=0.5*((2*p1.x)+(-p0.x+p2.x)*t+(2*p0.x-5*p1.x+4*p2.x-p3.x)*t2+(-p0.x+3*p1.x-3*p2.x+p3.x)*t3);
+        const y=0.5*((2*p1.y)+(-p0.y+p2.y)*t+(2*p0.y-5*p1.y+4*p2.y-p3.y)*t2+(-p0.y+3*p1.y-3*p2.y+p3.y)*t3);
+        trailSamples.push({x, y, inAir:false});
+      }
+    }
+  }
+ 
+  // ── PLACE CAMPS on safe (flat, non-drop) ground ──
+  // Each camp must be at least 1 screen-width apart in world units.
+  // We target 10 camps evenly across the trail but enforce the minimum gap strictly.
+  const campNames=['Camp 1','Camp 2','Camp 3','Camp 4','Camp 5',
+                   'Camp 6','Camp 7','Camp 8','Camp 9','Summit'];
+ 
+  // Minimum world-unit gap between camps = 1.2× canvas width (at least 500)
+  const minGap = Math.max(500, (canvas.width||800) * 1.2);
+ 
+  // Start searching from a bit into the trail so first camp isn't at the very start
+  let lastCampWX = 0;
+ 
+  for(let i=0;i<10;i++){
+    const xpGate=(i+1)*300;
+    const frac=xpGate/TRAIL_XP_GOAL;
+ 
+    // Ideal target world-x based on XP fraction
+    const idealWX = 200 + frac*(TRAIL_LEN-600);
+ 
+    // Minimum allowed world-x = last camp + minGap
+    const minWX = lastCampWX + minGap;
+ 
+    // Search start = whichever is further ahead
+    const searchStart = Math.max(idealWX, minWX);
+ 
+    // Find index in trailSamples at searchStart
+    let idx = 0;
+    for(let j=0;j<trailSamples.length;j++){
+      if(trailSamples[j].x >= searchStart){ idx=j; break; }
+    }
+ 
+    // Scan forward (up to 300 samples) for flat, non-drop ground
+    let safeIdx = idx;
+    const scanLimit = Math.min(idx+300, trailSamples.length-6);
+    for(let j=idx; j<scanLimit; j++){
+      if(trailSamples[j].inAir) continue;
+      const flatAhead = !trailSamples[j+1].inAir &&
+                        !trailSamples[j+2].inAir &&
+                        !trailSamples[j+3].inAir &&
+                        !trailSamples[j+4].inAir;
+      const s1 = trailSamples[j];
+      const s2 = trailSamples[Math.min(j+25, trailSamples.length-1)];
+      const slope = Math.abs(s2.y - s1.y) / Math.max(1, s2.x - s1.x);
+      if(flatAhead && slope < 0.30){ safeIdx=j; break; }
+    }
+ 
+    const safe = trailSamples[safeIdx];
+    trailCamps.push({wx:safe.x, wy:safe.y, xpGate, name:campNames[i]});
+    lastCampWX = safe.x;
+  }
+}
+ 
+function getTrailSampleAt(wx){
+  if(!trailSamples.length)return{x:wx,y:60,inAir:false};
+  let lo=0,hi=trailSamples.length-1;
+  while(lo<hi){const mid=(lo+hi)>>1;if(trailSamples[mid].x<wx)lo=mid+1;else hi=mid;}
+  return trailSamples[Math.min(lo,trailSamples.length-1)];
+}
+ 
+function getTrailAngleAt(wx){
+  const LOOK=8;
+  const a=getTrailSampleAt(wx-LOOK);
+  const b=getTrailSampleAt(wx+LOOK);
+  return Math.atan2(b.y-a.y, b.x-a.x);
+}
+ 
+// ── BIKE STATE ──
+const bike={
+  wx:100,          // world x
+  wy:0,            // world y (canvas coords)
+  vy:0,            // vertical velocity when airborne
+  onGround:true,
+  angle:0,         // body rotation (radians)
+  wheelRot:0,
+  suspended:0,
+  celebrating:false,
+  finished:false,
+};
+ 
+// XP progress → bike position mapping
+// Bike world-x = lerp(startX, finishX, xpProgress)
+// Bike position = XP earned minus 75% of XP spent on purchases
+// (rewards don't move the bike back, only shop purchases do)
+function getBikeTargetWX(){
+  const effectiveXP=Math.max(0, state.xpTotal - Math.floor(state.xpSpentOnShop*0.75));
+  const progress=Math.min(1, effectiveXP/TRAIL_XP_GOAL);
+  return 100+progress*(TRAIL_LEN-200);
+}
+ 
+let camX=0;
+let bgStars=[];
+let bgMountains=[];
+ 
+function initBg(){
+  bgStars=Array.from({length:55},()=>({x:Math.random()*8000,y:Math.random()*0.55,r:Math.random()*1.1+0.3}));
+  bgMountains=[];
+  for(let i=0;i<12;i++){
+    bgMountains.push({x:i*600+Math.random()*200,w:300+Math.random()*250,h:55+Math.random()*70,col:i%2===0?'#1a1528':'#1e1a30'});
+  }
+}
+ 
+function resizeCanvas(){
+  canvas.width=canvas.offsetWidth;
+  canvas.height=document.getElementById('trail-scene').offsetHeight;
+  buildTrail();
+  bike.wx=getBikeTargetWX();
+  const s=getTrailSampleAt(bike.wx);
+  bike.wy=s.y;
+  camX=bike.wx-canvas.width*0.28;
+}
+ 
+// ── DRAW BIKE ──
+function drawBike(sx,sy,angle,tier,fc,wc,kc,susp){
+  const s=0.52;
+  ctx.save();
+  ctx.translate(sx,sy);
+  ctx.rotate(angle);
+ 
+  const bo=susp*3;
+  const bby=bo;
+ 
+  // rear wheel
+  ctx.strokeStyle=wc;ctx.lineWidth=2.5*s;
+  ctx.beginPath();ctx.arc(-20*s,bby,12*s,0,Math.PI*2);ctx.stroke();
+  ctx.strokeStyle=wc+'55';ctx.lineWidth=0.8*s;
+  for(let a=0;a<4;a++){const r=bike.wheelRot+a*Math.PI/2;ctx.beginPath();ctx.moveTo(-20*s+Math.cos(r)*3*s,bby+Math.sin(r)*3*s);ctx.lineTo(-20*s+Math.cos(r)*12*s,bby+Math.sin(r)*12*s);ctx.stroke();}
+ 
+  // front wheel
+  ctx.strokeStyle=wc;ctx.lineWidth=2.5*s;
+  ctx.beginPath();ctx.arc(20*s,bby,12*s,0,Math.PI*2);ctx.stroke();
+  ctx.strokeStyle=wc+'55';ctx.lineWidth=0.8*s;
+  for(let a=0;a<4;a++){const r=bike.wheelRot+a*Math.PI/2;ctx.beginPath();ctx.moveTo(20*s+Math.cos(r)*3*s,bby+Math.sin(r)*3*s);ctx.lineTo(20*s+Math.cos(r)*12*s,bby+Math.sin(r)*12*s);ctx.stroke();}
+ 
+  ctx.strokeStyle=fc;ctx.lineWidth=2.5*s;ctx.lineCap='round';
+  // chainstay
+  ctx.beginPath();ctx.moveTo(-20*s,bby);ctx.lineTo(0,bby+2*s);ctx.stroke();
+  // seat tube
+  ctx.beginPath();ctx.moveTo(0,bby+2*s);ctx.lineTo(-5*s,bby-20*s);ctx.stroke();
+  // down tube
+  ctx.beginPath();ctx.moveTo(13*s,bby-10*s);ctx.lineTo(0,bby+2*s);ctx.stroke();
+  // top tube
+  ctx.beginPath();ctx.moveTo(-5*s,bby-20*s);ctx.lineTo(13*s,bby-10*s);ctx.stroke();
+  // seat stay
+  ctx.beginPath();ctx.moveTo(-5*s,bby-20*s);ctx.lineTo(-20*s,bby);ctx.stroke();
+ 
+  // fork
+  if(tier===0){
+    ctx.strokeStyle=kc;ctx.lineWidth=2*s;
+    ctx.beginPath();ctx.moveTo(13*s,bby-10*s);ctx.lineTo(20*s,bby);ctx.stroke();
+  } else {
+    ctx.strokeStyle=kc;ctx.lineWidth=2.5*s;
+    ctx.beginPath();ctx.moveTo(12*s,bby-10*s);ctx.lineTo(19*s,bby+bo*0.4);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(15*s,bby-10*s);ctx.lineTo(22*s,bby+bo*0.4);ctx.stroke();
+    ctx.strokeStyle=kc+'99';ctx.lineWidth=3.5*s;
+    ctx.beginPath();ctx.moveTo(12*s,bby-5*s);ctx.lineTo(22*s,bby-5*s);ctx.stroke();
+  }
+  // rear shock
+  if(tier>=2){
+    ctx.strokeStyle=kc;ctx.lineWidth=3*s;
+    ctx.beginPath();ctx.moveTo(-2*s,bby-3*s);ctx.lineTo(-10*s,bby-12*s+susp*3);ctx.stroke();
+    ctx.fillStyle=kc;ctx.beginPath();ctx.arc(-10*s,bby-12*s+susp*3,2.5*s,0,Math.PI*2);ctx.fill();
+  }
+  // chainring
+  ctx.strokeStyle=wc;ctx.lineWidth=1.5*s;
+  ctx.beginPath();ctx.arc(0,bby+2*s,5*s,0,Math.PI*2);ctx.stroke();
+  ctx.fillStyle=fc+'bb';ctx.beginPath();ctx.arc(0,bby+2*s,2*s,0,Math.PI*2);ctx.fill();
+  // seat post + saddle
+  ctx.strokeStyle='#c4b5fd';ctx.lineWidth=2*s;
+  ctx.beginPath();ctx.moveTo(-5*s,bby-20*s);ctx.lineTo(-6*s,bby-29*s);ctx.stroke();
+  ctx.strokeStyle=wc;ctx.lineWidth=2.5*s;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(-13*s,bby-30*s);ctx.lineTo(-0*s,bby-30*s);ctx.stroke();
+  // stem + bars
+  ctx.strokeStyle='#c4b5fd';ctx.lineWidth=2*s;
+  ctx.beginPath();ctx.moveTo(13*s,bby-11*s);ctx.lineTo(15*s,bby-19*s);ctx.stroke();
+  const bw=tier===3?8:6;
+  ctx.strokeStyle=fc;ctx.lineWidth=2.5*s;
+  ctx.beginPath();ctx.moveTo((15-bw)*s,bby-19*s);ctx.lineTo((15+bw)*s,bby-19*s);ctx.stroke();
+  // pedals
+  ctx.strokeStyle=wc;ctx.lineWidth=2*s;
+  const pa=bike.wheelRot*0.75;
+  ctx.beginPath();ctx.moveTo(Math.cos(pa)*6*s,bby+2*s+Math.sin(pa)*6*s);ctx.lineTo(Math.cos(pa+Math.PI)*6*s,bby+2*s+Math.sin(pa+Math.PI)*6*s);ctx.stroke();
+ 
+  // celebration sparkle
+  if(bike.celebrating){
+    const sp=['✨','⭐','💫'];
+    ctx.font=`${10*s}px serif`;
+    ctx.fillText(sp[Math.floor(Date.now()/180)%sp.length],22*s,-36*s);
+  }
+  ctx.restore();
+}
+ 
+// ── DRAW CAMP ──
+function drawCamp(sx,sy,reached,name,xpGate){
+  const tSize=22,tW=16;
+  // tent triangle
+  const dark=reached?'#2d4a1e':'#2a1f3d';
+  const light=reached?'#3ddc84':'#a594ff';
+  ctx.fillStyle=dark;
+  ctx.beginPath();ctx.moveTo(sx-tW,sy);ctx.lineTo(sx,sy-tSize);ctx.lineTo(sx+tW,sy);ctx.closePath();ctx.fill();
+  // front shade
+  ctx.fillStyle=reached?'rgba(61,220,132,0.12)':'rgba(165,148,255,0.10)';
+  ctx.beginPath();ctx.moveTo(sx,sy-tSize);ctx.lineTo(sx+tW,sy);ctx.lineTo(sx,sy);ctx.closePath();ctx.fill();
+  // outline
+  ctx.strokeStyle=light;ctx.lineWidth=1.2;
+  ctx.beginPath();ctx.moveTo(sx-tW,sy);ctx.lineTo(sx,sy-tSize);ctx.lineTo(sx+tW,sy);ctx.stroke();
+  // door slit
+  ctx.strokeStyle=light+'66';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(sx,sy-tSize*0.5);ctx.stroke();
+  // flag pole + triangle flag
+  ctx.strokeStyle='#c4b5fd';ctx.lineWidth=1.2;
+  ctx.beginPath();ctx.moveTo(sx,sy-tSize);ctx.lineTo(sx,sy-tSize-14);ctx.stroke();
+  ctx.fillStyle=reached?'#3ddc84':'#f5c542';
+  ctx.beginPath();ctx.moveTo(sx,sy-tSize-14);ctx.lineTo(sx+9,sy-tSize-10);ctx.lineTo(sx,sy-tSize-6);ctx.closePath();ctx.fill();
+  // label
+  if(!reached){
+    ctx.fillStyle='rgba(165,148,255,0.7)';ctx.font='bold 9px DM Mono,monospace';ctx.textAlign='center';
+    ctx.fillText(xpGate+'xp',sx,sy-tSize-18);ctx.textAlign='left';
+  } else {
+    ctx.fillStyle='rgba(61,220,132,0.8)';ctx.font='bold 9px DM Mono,monospace';ctx.textAlign='center';
+    ctx.fillText('✓',sx,sy-tSize-18);ctx.textAlign='left';
+  }
+}
+ 
+// ── DRAW FINISH ──
+function drawFinish(sx,sy,reached){
+  const col=reached?'#f5c542':'rgba(240,211,66,0.5)';
+  // pole
+  ctx.strokeStyle=col;ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(sx,sy-40);ctx.stroke();
+  // banner
+  ctx.fillStyle=reached?'#f5c542':'rgba(240,211,66,0.35)';
+  ctx.fillRect(sx,sy-40,28,10);
+  ctx.fillStyle=reached?'#111':'rgba(0,0,0,0.5)';
+  ctx.font='bold 7px DM Mono,monospace';ctx.fillText('FINISH',sx+2,sy-33);
+  // checkers
+  for(let i=0;i<4;i++)for(let j=0;j<2;j++){
+    if((i+j)%2===0){ctx.fillStyle=reached?'#fff':'rgba(255,255,255,0.3)';ctx.fillRect(sx+i*7,sy-40+j*5,7,5);}
+  }
+  if(reached){
+    ctx.fillStyle='rgba(245,197,66,0.15)';
+    ctx.beginPath();ctx.arc(sx,sy-20,30,0,Math.PI*2);ctx.fill();
+  }
+}
+ 
+function animLoop(){
+  animFrame=requestAnimationFrame(animLoop);
+  if(!canvas.width||!trailSamples.length)return;
+ 
+  const W=canvas.width,H=canvas.height;
+  const tier=getBikeTier();
+  const tierIdx=BIKE_TIERS.indexOf(tier);
+  const fi=getShopItem(state.equipped.frame);
+  const wi=getShopItem(state.equipped.wheel);
+  const ki=getShopItem(state.equipped.fork);
+  const fc=fi?.color||'#a594ff';
+  const wc=wi?.color||'#f0eff5';
+  const kc=ki?.color||'#6b6b80';
+ 
+  // ── BIKE MOVEMENT ──
+  // Bike x-position is driven by XP total — no autonomous movement when no XP
+  const targetWX=getBikeTargetWX();
+  // Smoothly interpolate toward target
+  const prevWX=bike.wx;
+  bike.wx+=(targetWX-bike.wx)*0.04;
+ 
+  const sample=getTrailSampleAt(bike.wx);
+  const groundWY=sample.y;
+  const isDropZone=sample.inAir;
+ 
+  // Physics
+  if(isDropZone && bike.onGround){
+    // Launch off drop-off
+    bike.vy= -0.5;
+    bike.onGround=false;
+  }
+ 
+  if(!bike.onGround){
+    bike.wy+=bike.vy;
+    bike.vy+=0.35; // gravity
+    if(bike.wy>=groundWY){
+      bike.wy=groundWY;bike.vy=0;bike.onGround=true;
+      bike.suspended=Math.min(1,bike.suspended+0.6);
+    }
+  } else {
+    bike.wy+=(groundWY-bike.wy)*0.4;
+  }
+ 
+  // Suspension
+  const slope=getTrailAngleAt(bike.wx);
+  const slopeDelta=Math.abs(slope - (getTrailAngleAt(bike.wx-10)||0));
+  if(tierIdx>=1)bike.suspended=Math.min(1,bike.suspended+slopeDelta*0.3);
+  bike.suspended*=0.85;
+ 
+  // Bike body angle = trail angle (smoothed)
+  const targetAngle=bike.onGround ? getTrailAngleAt(bike.wx) : bike.angle*0.95;
+  bike.angle+=(targetAngle-bike.angle)*0.25;
+ 
+  // Wheel rotation — only spin when actually moving
+  const dx=Math.abs(bike.wx-prevWX);
+  bike.wheelRot+=dx*0.10;
+ 
+  // Celebration
+  if(bike.celebrating){celebrationTimer--;if(celebrationTimer<=0)bike.celebrating=false;}
+ 
+  // Camera follow
+  const targetCamX=bike.wx-W*0.30;
+  camX+=(targetCamX-camX)*0.06;
+ 
+  // ── DRAW ──
+  ctx.clearRect(0,0,W,H);
+ 
+  // Sky
+  const sky=ctx.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0,'#05040e');
+  sky.addColorStop(1,'#10101a');
+  ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+ 
+  // Stars
+  bgStars.forEach(s=>{
+    const sx=((s.x-camX*0.04)%(W+20)+W+20)%(W+20)-10;
+    const sy=s.y*H*0.55;
+    ctx.fillStyle=`rgba(255,255,255,${0.25+Math.sin(Date.now()*0.0008+s.x)*0.2})`;
+    ctx.beginPath();ctx.arc(sx,sy,s.r,0,Math.PI*2);ctx.fill();
+  });
+ 
+  // Parallax mountains
+  bgMountains.forEach(m=>{
+    const mx=((m.x-camX*0.12)%(W+m.w+100)+W+m.w+100)%(W+m.w+100)-m.w;
+    const base=H*0.85;
+    ctx.fillStyle=m.col;
+    ctx.beginPath();ctx.moveTo(mx,base);ctx.lineTo(mx+m.w/2,base-m.h);ctx.lineTo(mx+m.w,base);ctx.closePath();ctx.fill();
+    // snow cap
+    ctx.fillStyle='rgba(255,255,255,0.06)';
+    ctx.beginPath();ctx.moveTo(mx+m.w*0.38,base-m.h*0.75);ctx.lineTo(mx+m.w/2,base-m.h);ctx.lineTo(mx+m.w*0.62,base-m.h*0.75);ctx.closePath();ctx.fill();
+  });
+ 
+  // ── GROUND ──
+  if(trailSamples.length>1){
+    ctx.beginPath();
+    ctx.moveTo(0,H);
+    let started=false;
+    for(let i=0;i<trailSamples.length;i++){
+      const s=trailSamples[i];
+      const sx=s.x-camX;
+      if(sx<-10||sx>W+10)continue;
+      if(!started){ctx.lineTo(sx,s.y);started=true;}
+      else ctx.lineTo(sx,s.y);
+    }
+    ctx.lineTo(W,H);ctx.closePath();
+    const gg=ctx.createLinearGradient(0,H*0.3,0,H);
+    gg.addColorStop(0,'#261e38');gg.addColorStop(0.5,'#1a1228');gg.addColorStop(1,'#0c0914');
+    ctx.fillStyle=gg;ctx.fill();
+ 
+    // Surface line
+    ctx.strokeStyle='rgba(165,148,255,0.3)';ctx.lineWidth=1.5;
+    ctx.beginPath();started=false;
+    for(let i=0;i<trailSamples.length;i++){
+      const s=trailSamples[i];const sx=s.x-camX;
+      if(sx<-10||sx>W+10)continue;
+      if(!started){ctx.moveTo(sx,s.y);started=true;}else ctx.lineTo(sx,s.y);
+    }
+    ctx.stroke();
+  }
+ 
+  // ── TREES (pinned to terrain) ──
+  const treePositions=[80,220,380,520,700,900,1100,1350,1600,1850,2100,2400,2700,3000,3300,3600,3900,4200,4600,5000,5400,5800];
+  treePositions.forEach(twx=>{
+    const tsx=twx-camX;
+    if(tsx<-30||tsx>W+30)return;
+    const ts=getTrailSampleAt(twx);
+    const ty=ts.y;
+    ctx.fillStyle='#1a2b1a';
+    ctx.beginPath();ctx.moveTo(tsx-7,ty);ctx.lineTo(tsx,ty-20);ctx.lineTo(tsx+7,ty);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#1e321e';
+    ctx.beginPath();ctx.moveTo(tsx-5,ty-12);ctx.lineTo(tsx,ty-28);ctx.lineTo(tsx+5,ty-12);ctx.closePath();ctx.fill();
+    ctx.fillStyle='rgba(61,220,132,0.04)';
+    ctx.beginPath();ctx.moveTo(tsx-3,ty-20);ctx.lineTo(tsx,ty-32);ctx.lineTo(tsx+3,ty-20);ctx.closePath();ctx.fill();
+  });
+ 
+  // ── CAMPS ──
+  const effectiveXPForCamps=Math.max(0,state.xpTotal-Math.floor((state.xpSpentOnShop||0)*0.75));
+  trailCamps.forEach(camp=>{
+    const csx=camp.wx-camX;
+    if(csx<-60||csx>W+60)return;
+    const reached=effectiveXPForCamps>=camp.xpGate;
+    drawCamp(csx,camp.wy,reached,camp.name,camp.xpGate);
+  });
+ 
+  // ── FINISH LINE ──
+  if(trailFinish){
+    const fsx=trailFinish.wx-camX;
+    if(fsx>-60&&fsx<W+60){
+      const reached=effectiveXPForCamps>=TRAIL_XP_GOAL;
+      drawFinish(fsx,trailFinish.wy,reached);
+    }
+  }
+ 
+  // ── XP PROGRESS BAR on trail ──
+  const effectiveXP=Math.max(0,state.xpTotal-Math.floor((state.xpSpentOnShop||0)*0.75));
+  const progress=Math.min(1,effectiveXP/TRAIL_XP_GOAL);
+  const barW=Math.min(200,W*0.22);
+  const bx=W-barW-12,by=8;
+  ctx.fillStyle='rgba(0,0,0,0.45)';ctx.beginPath();ctx.roundRect(bx-4,by-4,barW+8,14,4);ctx.fill();
+  ctx.fillStyle='rgba(165,148,255,0.2)';ctx.beginPath();ctx.roundRect(bx,by,barW,6,3);ctx.fill();
+  ctx.fillStyle=progress>=1?'#f5c542':'#a594ff';
+  ctx.beginPath();ctx.roundRect(bx,by,barW*progress,6,3);ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,0.55)';ctx.font='bold 8px DM Mono,monospace';ctx.textAlign='right';
+  ctx.fillText(progress>=1?'TRAIL COMPLETE ✓':`${effectiveXP}/${TRAIL_XP_GOAL} XP`,W-12,by+14);ctx.textAlign='left';
+ 
+  // ── SPEED LINES (celebration) ──
+  if(bike.celebrating){
+    ctx.strokeStyle='rgba(165,148,255,0.12)';ctx.lineWidth=1;
+    for(let i=0;i<6;i++){const lx=W*0.28-i*55,ly=H*0.35+i*7;ctx.beginPath();ctx.moveTo(lx,ly);ctx.lineTo(lx+35,ly);ctx.stroke();}
+  }
+ 
+  // ── BIKE ──
+  const bsx=bike.wx-camX;
+  drawBike(bsx,bike.wy,bike.angle,tierIdx,fc,wc,kc,bike.suspended);
+}
+ 
+// ════════════════════════════════════════════
+//  CELEBRATION
+// ════════════════════════════════════════════
+function triggerCelebration(){
+  bike.celebrating=true;
+  celebrationTimer=200;
+}
+ 
+// ════════════════════════════════════════════
+//  TASK HELPERS
+// ════════════════════════════════════════════
+function isActiveToday(t){
+  if(t.section!=='daily')return false;
+  const today=todayStr();
+  if(t.endDate&&t.endDate<today)return false;
+  if(!t.days||!t.days.length)return false;
+  return t.days.includes('daily')||t.days.includes(todayKey());
+}
+function dailiesForToday(){return state.tasks.filter(isActiveToday);}
+function allDailyDone(){const dt=dailiesForToday();return dt.length>0&&dt.every(t=>t.done);}
+function streakEarnedToday(){return state.streakDate===todayStr();}
+ 
+// ════════════════════════════════════════════
+//  STREAK + SUSPENSION SAVE
+// ════════════════════════════════════════════
+function saveChanceForCurrentStreak(){
+  const tier=getBikeTier();
+  const base=tier.saveChance;
+  // streak bonus: +0.5% per streak day, capped at +15%
+  const bonus=Math.min(0.15,state.streak*0.005);
+  return Math.min(0.55,base+bonus);
+}
+ 
+function checkAndGrantStreak(){
+  if(allDailyDone()&&!streakEarnedToday()){
+    state.streak++;
+    state.streakDate=todayStr();
+    save();
+    showPopup('🔥 +1 streak!');
+    showToast(`🔥 Streak is now ${state.streak}! Locked in for today.`);
+    renderPlayer();
+    checkBadges();
+    triggerCelebration();
+  }
+}
+ 
+function scheduleMidnight(){
+  const now=new Date();
+  const ms=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1,0,0,1).getTime()-now.getTime();
+  setTimeout(()=>{runMidnight();scheduleMidnight();},ms);
+}
+ 
+function runMidnight(){
+  // Did user complete their dailies?
+  if(state.streakDate===todayStr()){
+    // Already earned — just reset for tomorrow
+    midnightCleanup();
+    return;
+  }
+  // Missed dailies — try suspension save
+  const saveChance=saveChanceForCurrentStreak();
+  const tier=getBikeTier();
+  if(state.streak>0&&saveChance>0){
+    showDiceRoll(saveChance,tier,false);
+  } else {
+    // No save possible
+    if(state.streak>0){
+      state.streak=0;
+      showToast('😔 Streak reset — missed daily quests.');
+    }
+    midnightCleanup();
+  }
+}
+ 
+function midnightCleanup(){
+  const today=todayStr();
+  state.tasks=state.tasks.filter(t=>!t.endDate||t.endDate>=today);
+  state.tasks.forEach(t=>{if(t.section==='daily')t.done=false;});
+  save();render();
+}
+ 
+// ════════════════════════════════════════════
+//  DICE ROLL
+// ════════════════════════════════════════════
+const DICE_FACES=['⚀','⚁','⚂','⚃','⚄','⚅'];
+let diceInterval=null;
+ 
+function showDiceRoll(chance,tier,isNotification){
+  const overlay=document.getElementById('dice-overlay');
+  const pct=Math.round(chance*100);
+  document.getElementById('dice-title').textContent=isNotification?'🌅 Overnight Check':'🌙 Midnight Check';
+  document.getElementById('dice-sub').innerHTML=`You missed some daily quests...<br><strong style="color:var(--accent2)">${tier.name}</strong> suspension gives you a <strong style="color:var(--gold)">${pct}%</strong> save chance!`;
+  document.getElementById('dice-result').textContent='';
+  document.getElementById('dice-detail').textContent='';
+  document.getElementById('dice-close').style.display='none';
+  document.getElementById('dice-face').className='dice-face';
+ 
+  overlay.classList.add('show');
+ 
+  // Spin dice
+  let spins=0;
+  const maxSpins=20+Math.floor(Math.random()*15);
+  diceInterval=setInterval(()=>{
+    document.getElementById('dice-face').textContent=DICE_FACES[Math.floor(Math.random()*6)];
+    spins++;
+    if(spins>=maxSpins){
+      clearInterval(diceInterval);
+      // Roll the result
+      const saved=Math.random()<chance;
+      document.getElementById('dice-face').className='dice-face settled';
+      document.getElementById('dice-face').textContent=saved?'⚅':'⚀';
+      const resEl=document.getElementById('dice-result');
+      const detEl=document.getElementById('dice-detail');
+      if(saved){
+        resEl.textContent='🛡️ Streak Saved!';
+        resEl.className='dice-result saved';
+        detEl.textContent=`Your ${tier.name} suspension absorbed the hit. Streak stays at ${state.streak}!`;
+        state.savedStreakDate=todayStr();
+        showPopup('🛡️ Saved!');
+      } else {
+        const old=state.streak;
+        state.streak=0;
+        resEl.textContent='💥 Streak Lost';
+        resEl.className='dice-result lost';
+        detEl.textContent=`${pct}% wasn't enough. ${old}-day streak reset. Upgrade your bike for a better chance!`;
+      }
+      document.getElementById('dice-close').style.display='inline-block';
+      save();renderPlayer();
+    }
+  },80);
+}
+ 
+function closeDice(){
+  document.getElementById('dice-overlay').classList.remove('show');
+  midnightCleanup();
+}
+ 
+// On app open — check if midnight passed while away
+function checkMissedMidnight(){
+  const today=todayStr();
+  const yesterday=yesterdayStr();
+  // If we haven't seen today yet and streak wasn't earned yesterday
+  if(state.streakDate&&state.streakDate!==today&&state.streakDate!==yesterday&&state.streak>0){
+    // Missed multiple days — no save
+    state.streak=0;
+    save();
+    showToast('😔 Streak reset — missed too many days.');
+    return;
+  }
+  if(state.streakDate===yesterday&&state.streak>0){
+    // Missed last night but app just opened — notification-style dice
+    const tier=getBikeTier();
+    const chance=saveChanceForCurrentStreak();
+    if(chance>0){
+      setTimeout(()=>showDiceRoll(chance,tier,true),1200);
+    } else {
+      state.streak=0;save();
+      showToast('😔 Streak reset — missed daily quests yesterday.');
+    }
+  }
+}
+ 
+// ════════════════════════════════════════════
+//  BADGES
+// ════════════════════════════════════════════
+function checkBadges(){
+  BADGE_DEFS.forEach(b=>{
+    if(!state.unlockedBadges.includes(b.id)&&b.check(state)){
+      state.unlockedBadges.push(b.id);save();
+      showBadgePopup(b);
+      document.getElementById('cnt-badges').textContent=state.unlockedBadges.length;
+    }
+  });
+}
+function claimBadgeReward(id){
+  if(state.claimedBadges.includes(id))return;
+  const b=BADGE_DEFS.find(x=>x.id===id);
+  if(!b||!state.unlockedBadges.includes(id))return;
+  state.claimedBadges.push(id);
+  if(b.reward.type==='xp'){
+    state.xp+=b.reward.value;state.xpTotal+=b.reward.value;
+    let leveled=false;
+    while(state.xp>=xpForLevel(state.level)){state.xp-=xpForLevel(state.level);state.level++;leveled=true;}
+    if(leveled)setTimeout(()=>showLevelUpModal(state.level),300);
+    showToast(`🎉 +${b.reward.value} XP claimed!`);showPopup(`+${b.reward.value} xp`);
+  }else if(b.reward.type==='item'){
+    if(!state.owned.includes(b.reward.value))state.owned.push(b.reward.value);
+    showToast(`🎉 ${b.reward.label}`);
+  }
+  save();render();
+}
+function showBadgePopup(b){
+  document.getElementById('bp-icon').textContent=b.icon;
+  document.getElementById('bp-sub').textContent=b.name+' — '+b.desc;
+  const el=document.getElementById('badge-popup');el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),4000);
+}
+ 
+// ════════════════════════════════════════════
+//  RENDER
+// ════════════════════════════════════════════
+function render(){applyTheme();renderPlayer();renderCounts();renderContent();updateDate();}
+function updateDate(){const d=new Date();document.getElementById('topbar-date').textContent=`${FULL_DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;}
+ 
+function renderPlayer(){
+  const max=xpForLevel(state.level);
+  document.getElementById('xp-fill').style.width=Math.min(100,(state.xp/max)*100)+'%';
+  document.getElementById('xp-lbl').textContent=`XP ${state.xp} / ${max}`;
+  document.getElementById('level-num').textContent=state.level;
+  document.getElementById('streak-num').textContent=state.streak;
+  document.getElementById('done-num').textContent=state.totalDone;
+  document.getElementById('xp-avail').textContent=`${xpAvailable()} XP available`;
+  const t=LEVELS[Math.min(state.level-1,LEVELS.length-1)];
+  document.getElementById('sidebar-title').textContent=t;
+  const tier=getBikeTier();
+  document.getElementById('sb-bike-icon').textContent=tier.icon;
+  document.getElementById('sb-tier-name').textContent=tier.name;
+  document.getElementById('streak-pill').classList.toggle('streak-active',streakEarnedToday());
+}
+ 
+function renderCounts(){
+  const dt=dailiesForToday();
+  const todayCount=dt.filter(t=>!t.done).length+state.tasks.filter(t=>t.section==='addon'&&!t.done).length;
+  document.getElementById('cnt-today').textContent=todayCount;
+  document.getElementById('cnt-review').textContent=(state.critiqueHistory||[]).filter(h=>h.date===todayStr()).length||'';
+  document.getElementById('cnt-daily').textContent=state.tasks.filter(t=>t.section==='daily').length;
+  document.getElementById('cnt-addon').textContent=state.tasks.filter(t=>t.section==='addon').length;
+  document.getElementById('cnt-done').textContent=state.tasks.filter(t=>t.done).length;
+  document.getElementById('cnt-badges').textContent=state.unlockedBadges.length;
+  // Bottom nav badges
+  const todayBadge=document.getElementById('badge-today');
+  if(todayBadge){todayBadge.textContent=todayCount||'';todayBadge.classList.toggle('show',todayCount>0);}
+  const badgeBadge=document.getElementById('badge-badges');
+  const unclaimed=state.unlockedBadges.filter(id=>!state.claimedBadges.includes(id)).length;
+  if(badgeBadge){badgeBadge.textContent=unclaimed||'';badgeBadge.classList.toggle('show',unclaimed>0);}
+}
+ 
+function taskHTML(t){
+  let dl='';
+  if(t.days&&t.days.length)dl=t.days.includes('daily')?'daily':t.days.map(d=>d[0].toUpperCase()+d.slice(1)).join(', ');
+  const xpLabel = t.halfXp
+    ? `<span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--orange);">½ +${Math.floor(XP_MAP[t.diff]/2)}xp</span>`
+    : `<span class="xp-tag">+${XP_MAP[t.diff]}xp</span>`;
+  return`<div class="task-item ${t.done?'done':''}">
+    <button class="check-btn" onclick="toggle(${t.id})">${t.done?'✓':''}</button>
+    <span class="diff-dot dot-${t.diff}"></span>
+    <span class="task-text">${esc(t.text)}</span>
+    <div class="task-meta">
+      ${dl?`<span class="day-tag">${dl}</span>`:''}
+      ${t.endDate?`<span class="end-tag">until ${t.endDate}</span>`:''}
+      ${xpLabel}
+    </div>
+    <button class="del-btn" onclick="del(${t.id})">✕</button>
+  </div>`;
+}
+ 
+function renderContent(){
+  const v=state.currentView;
+  const el=document.getElementById('content-area');
+  const titles={today:'Today',critique:'AI Critique Log',daily:'Daily Tasks',addon:'Add-ons',done:'Completed',easy:'Easy',medium:'Medium',hard:'Hard',shop:'Bike Shop',rewards:'Reward Store',badges:'Badges'};
+  document.getElementById('view-title').textContent=titles[v]||v;
+  if(v==='today')el.innerHTML=renderTodayHTML();
+  else if(v==='critique')el.innerHTML=renderCritiqueHTML();
+  else if(v==='daily')el.innerHTML=secHTML('Daily Tasks',state.tasks.filter(t=>t.section==='daily'),'daily');
+  else if(v==='addon')el.innerHTML=secHTML('Add-on Tasks',state.tasks.filter(t=>t.section==='addon'),'addon');
+  else if(v==='done')el.innerHTML=secHTML('Completed',state.tasks.filter(t=>t.done),null,true);
+  else if(['easy','medium','hard'].includes(v))el.innerHTML=secHTML(v+' quests',state.tasks.filter(t=>t.diff===v),null);
+  else if(v==='shop')el.innerHTML=renderShopHTML();
+  else if(v==='rewards')el.innerHTML=renderRewardsHTML();
+  else if(v==='badges')el.innerHTML=renderBadgesHTML();
+}
+ 
+function renderTodayHTML(){
+  const dailies=dailiesForToday(),addons=state.tasks.filter(t=>t.section==='addon'&&!t.done);
+  const locked=streakEarnedToday();
+  const tier=getBikeTier();
+  const sc=Math.round(saveChanceForCurrentStreak()*100);
+  let html='';
+  if(locked)html+=`<div class="streak-locked-bar">✓ Daily quests complete — streak locked in at ${state.streak}! Bike is celebrating on the trail 🚵</div>`;
+  else if(state.streak>0&&tier.saveChance>0){
+    html+=`<div style="background:rgba(123,97,255,.07);border:1px solid rgba(123,97,255,.2);border-radius:8px;padding:9px 14px;font-size:12px;color:var(--accent2);margin-bottom:16px;">🛡️ If you miss today, your <strong>${tier.name}</strong> suspension has a <strong>${sc}%</strong> chance to save your streak at midnight.</div>`;
+  }
+  html+=`<div class="section-header"><div class="section-title">🔁 Daily</div><div class="section-progress">${dailies.length>0?`${dailies.filter(t=>t.done).length} / ${dailies.length}`:''}</div></div>`;
+  html+=dailies.length?`<div class="task-list">${dailies.map(taskHTML).join('')}</div>`:`<div class="empty"><span class="empty-icon">🔁</span>No daily quests today.</div>`;
+  html+=`<button class="add-task-btn" onclick="openModal('daily')">＋ Add daily quest</button><hr class="section-divider">`;
+  html+=`<div class="section-header"><div class="section-title">＋ Add-ons</div></div>`;
+  html+=addons.length?`<div class="task-list">${addons.map(taskHTML).join('')}</div>`:`<div class="empty"><span class="empty-icon">📋</span>No add-on tasks.</div>`;
+  html+=`<button class="add-task-btn" onclick="openModal('addon')">＋ Add task</button>`;
+  return html;
+}
+ 
+function renderCritiqueHTML(){
+  const history=(state.critiqueHistory||[]).slice().reverse();
+  const todayCount=history.filter(h=>h.date===todayStr()).length;
+  const approvedToday=history.filter(h=>h.date===todayStr()&&h.verdict==='approved').length;
+  const rejectedToday=history.filter(h=>h.date===todayStr()&&h.verdict==='rejected').length;
+  const warnedToday=history.filter(h=>h.date===todayStr()&&h.verdict==='warning').length;
+ 
+  if(!history.length){
+    return`<div style="background:rgba(123,97,255,.07);border:1px solid rgba(123,97,255,.2);border-radius:8px;padding:12px 16px;font-size:12px;color:var(--accent2);margin-bottom:16px;">
+      🤖 <strong>AI Critique is active.</strong> Every task you submit is automatically analysed before being added to your board. No manual approval needed — the AI checks specificity, difficulty honesty, and duplicate detection.
+    </div>
+    <div class="empty"><span class="empty-icon">🤖</span>No tasks critiqued yet.<br>Submit a task to see the AI in action.</div>`;
+  }
+ 
+  let html=`<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+    <div style="background:rgba(123,97,255,.07);border:1px solid rgba(123,97,255,.2);border-radius:8px;padding:8px 14px;font-size:12px;color:var(--accent2);flex:1;min-width:120px;">
+      🤖 <strong>${todayCount}</strong> critiqued today
+    </div>
+    ${approvedToday>0?`<div style="background:rgba(61,220,132,.07);border:1px solid rgba(61,220,132,.2);border-radius:8px;padding:8px 14px;font-size:12px;color:var(--green);flex:1;min-width:80px;">✓ ${approvedToday} approved</div>`:''}
+    ${warnedToday>0?`<div style="background:rgba(255,159,67,.07);border:1px solid rgba(255,159,67,.2);border-radius:8px;padding:8px 14px;font-size:12px;color:var(--orange);flex:1;min-width:80px;">⚠ ${warnedToday} flagged</div>`:''}
+    ${rejectedToday>0?`<div style="background:rgba(255,95,95,.07);border:1px solid rgba(255,95,95,.2);border-radius:8px;padding:8px 14px;font-size:12px;color:var(--red);flex:1;min-width:80px;">✕ ${rejectedToday} rejected</div>`:''}
+  </div>`;
+ 
+  html+=`<div class="section-header"><div class="section-title">Critique History</div></div>`;
+  history.forEach(h=>{
+    const isApproved=h.verdict==='approved';
+    const isRejected=h.verdict==='rejected';
+    const cardBorder=isApproved?'rgba(61,220,132,.25)':isRejected?'rgba(255,95,95,.25)':'rgba(255,159,67,.25)';
+    const statusStyle=isApproved?'background:rgba(61,220,132,.1);color:var(--green);border:1px solid rgba(61,220,132,.25);'
+      :isRejected?'background:rgba(255,95,95,.1);color:var(--red);border:1px solid rgba(255,95,95,.25);'
+      :'background:rgba(255,159,67,.1);color:var(--orange);border:1px solid rgba(255,159,67,.25);';
+    const statusLabel=isApproved?'✓ approved':isRejected?'✕ rejected':'⚠ flagged';
+    const isToday=h.date===todayStr();
+    html+=`<div class="critique-card" style="border-color:${cardBorder};${!isToday?'opacity:0.6;':''}">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
+        <div class="critique-task">${esc(h.text)}</div>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-left:8px;">
+          ${!isToday?`<span style="font-size:10px;color:var(--muted2);font-family:'DM Mono',monospace;">${h.date}</span>`:''}
+          <span style="${statusStyle}font-size:10px;border-radius:4px;padding:2px 8px;font-family:'DM Mono',monospace;">${statusLabel}</span>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">${{easy:'Easy · +10xp',medium:'Medium · +25xp',hard:'Hard · +50xp'}[h.diff]} · ${h.section}</div>
+      <div class="critique-verdict" style="font-size:12px;color:var(--text);margin-bottom:8px;line-height:1.5;">${esc(h.reasoning)}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;">
+        ${(h.checks||[]).map(c=>`<span style="font-size:10px;padding:2px 8px;border-radius:4px;${c.pass?'background:rgba(61,220,132,.1);color:var(--green);border:1px solid rgba(61,220,132,.2);':'background:rgba(255,95,95,.1);color:var(--red);border:1px solid rgba(255,95,95,.2);'}">${c.pass?'✓':'✕'} ${esc(c.label)}</span>
+        ${c.note?`<span style="font-size:10px;color:var(--muted2);padding-top:1px;">${esc(c.note)}</span>`:''}`).join('')}
+      </div>
+    </div>`;
+  });
+  return html;
+}
+ 
+function secHTML(label,tasks,section,doneView=false){
+  let html=`<div class="section-header"><div class="section-title">${label} <span style="color:var(--muted2);font-weight:400;text-transform:none;letter-spacing:0">${tasks.length}</span></div></div>`;
+  html+=tasks.length?`<div class="task-list">${tasks.map(taskHTML).join('')}</div>`:`<div class="empty"><span class="empty-icon">🗺️</span>Nothing here yet.</div>`;
+  if(section&&!doneView)html+=`<button class="add-task-btn" onclick="openModal('${section}')">＋ Add quest</button>`;
+  return html;
+}
+ 
+function renderShopHTML(){
+  const avail=xpAvailable();
+  const fi=getShopItem(state.equipped.frame),wi=getShopItem(state.equipped.wheel),ki=getShopItem(state.equipped.fork);
+  const tier=getBikeTier();const tierIdx=BIKE_TIERS.indexOf(tier);
+  const sc=Math.round((tier.saveChance+Math.min(0.15,state.streak*0.005))*100);
+  const scClass=tierIdx===0?'save-0':tierIdx===1?'save-low':tierIdx===2?'save-mid':'save-high';
+ 
+  let html=`<div class="bike-preview-box">
+    ${buildBikeSVGStatic(tierIdx,fi?.color||'#a594ff',wi?.color||'#f0eff5',ki?.color||'#6b6b80',160,107)}
+    <div style="display:flex;align-items:center;gap:10px;margin-top:4px;">
+      <div class="bike-tier-label">${tier.icon} ${tier.name}</div>
+      <span class="save-chance-badge ${scClass}">🛡️ ${sc}% save</span>
+    </div>
+    <div class="bike-tier-bar">${BIKE_TIERS.map((_,i)=>`<div class="bike-tier-pip ${i<=tierIdx?'active':''}"></div>`).join('')}</div>
+    <div style="font-size:11px;color:var(--muted);">${tierIdx<3?`Next tier: Lv ${BIKE_TIERS[tierIdx+1].minLevel} required + purchase in shop`:'Max tier unlocked!'}</div>
+  </div>`;
+ 
+  html+=`<div style="font-size:12px;color:var(--muted);margin-bottom:14px;font-family:'DM Mono',monospace;">Available XP: <span style="color:var(--gold);font-weight:600">${avail}</span> · Your Level: <span style="color:var(--accent2)">${state.level}</span></div>`;
+ 
+  // ── BIKE UPGRADES (tier changes) ──
+  html+=`<div class="shop-section-title">🚵 Bike Upgrades <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted2)">(unlock at level, then buy)</span></div>`;
+  html+=`<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:4px;">`;
+  ['bike_hardtail','bike_fullsus','bike_downhill'].forEach(id=>{
+    const item=getShopItem(id);
+    const tierData=BIKE_TIERS[item.tier];
+    const isUnlocked=state.level>=item.unlockLevel;
+    const isPurchased=state.owned.includes(id);
+    const isActive=getBikeTier()===tierData;
+    const canAfford=avail>=item.price;
+ 
+    let btn='';
+    if(isActive) btn=`<button class="shop-btn equipped-label" style="flex-shrink:0">Active</button>`;
+    else if(isPurchased) btn=`<button class="shop-btn equip" style="flex-shrink:0" onclick="equipBikeTier('${id}')">Equip</button>`;
+    else if(isUnlocked && canAfford) btn=`<button class="shop-btn buy" style="flex-shrink:0" onclick="buyItem('${id}','bike',${item.price})">Buy · ${item.price} XP</button>`;
+    else if(isUnlocked) btn=`<button class="shop-btn buy" disabled style="flex-shrink:0">Need ${item.price} XP</button>`;
+    else btn=`<button class="shop-btn buy" disabled style="flex-shrink:0">Locked · Lv ${item.unlockLevel}</button>`;
+ 
+    const statusDot=isPurchased?'#3ddc84':isUnlocked?'#f5c542':'#4a4a5a';
+    html+=`<div class="shop-card ${isActive?'equipped':isPurchased?'owned':''}" style="flex-direction:row;align-items:center;gap:12px;padding:12px 14px;">
+      <div style="font-size:28px;flex-shrink:0">${item.icon}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
+          <div class="shop-card-name">${item.name}</div>
+          <span style="font-size:10px;background:rgba(0,0,0,0.3);border-radius:4px;padding:1px 7px;color:${statusDot};border:1px solid ${statusDot}44;font-family:'DM Mono',monospace;">${isPurchased?'Owned':isUnlocked?'Unlocked':'Lv '+item.unlockLevel+' required'}</span>
+        </div>
+        <div class="shop-card-desc">${item.desc}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:3px;">🛡️ ${tierData.saveChance*100}% streak save · ${item.price===0?'Free':item.price+' XP'}</div>
+      </div>
+      ${btn}
+    </div>`;
+  });
+  html+=`</div>`;
+ 
+  // ── COSMETIC SHOP ──
+  ['frame','wheel','fork','theme'].forEach(type=>{
+    const label={frame:'🎨 Frame Colour',wheel:'🔵 Wheels',fork:'⚙️ Fork & Tyres',theme:'🎨 App Theme'}[type];
+    html+=`<div class="shop-section-title">${label}</div><div class="shop-grid">`;
+    SHOP_ITEMS.filter(i=>i.type===type).forEach(item=>{
+      const isUnlocked=state.level>=item.unlockLevel;
+      const isPurchased=state.owned.includes(item.id)||item.price===0;
+      const isEquipped=state.equipped[type]===item.id;
+      const canAfford=avail>=item.price;
+ 
+      let btn='';
+      if(isEquipped) btn=`<button class="shop-btn equipped-label">Equipped</button>`;
+      else if(isPurchased) btn=`<button class="shop-btn equip" onclick="equipItem('${item.id}','${type}')">Equip</button>`;
+      else if(!isUnlocked) btn=`<button class="shop-btn buy" disabled>Lv ${item.unlockLevel} required</button>`;
+      else btn=`<button class="shop-btn buy" ${!canAfford?'disabled':''} onclick="buyItem('${item.id}','${type}',${item.price})">${item.price===0?'Free':'Buy · '+item.price+' XP'}</button>`;
+ 
+      const dot=`background:${item.color||item.accent||'#888'};width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:4px;vertical-align:middle;`;
+      const lockedStyle=!isUnlocked?'opacity:0.5;':'';
+      html+=`<div class="shop-card ${isEquipped?'equipped':isPurchased?'owned':''}" style="${lockedStyle}">
+        <div class="shop-card-icon">${item.icon}</div>
+        <div class="shop-card-name"><span style="${dot}"></span>${item.name}</div>
+        <div class="shop-card-desc">${item.desc}</div>
+        <div class="shop-card-price ${item.price===0?'free':''}">${!isUnlocked?`🔒 Lv ${item.unlockLevel}`:item.price===0?'✓ Free':'⚡ '+item.price+' XP'}</div>
+        ${btn}
+      </div>`;
+    });
+    html+=`</div>`;
+  });
+  return html;
+}
+function buyItem(id,type,price){
+  if(xpAvailable()<price){showToast('Not enough XP!');return;}
+  state.xpSpent+=price;
+  state.xpSpentOnShop+=price;
+  if(!state.owned.includes(id))state.owned.push(id);
+  equipItem(id,type);
+  const setback=Math.floor(price*0.75);
+  save();
+  showToast(`✅ Purchased! Bike moves back ${setback} XP on the trail.`);
+  renderContent();renderPlayer();
+}
+function equipBikeTier(id){
+  // Equipping a bike tier doesn't cost XP — it was already purchased
+  if(!state.owned.includes(id))return;
+  save();applyTheme();renderContent();renderPlayer();
+  showToast('🚵 Bike tier switched!');
+}
+function equipItem(id,type){state.equipped[type]=id;save();applyTheme();renderContent();renderPlayer();}
+ 
+function renderRewardsHTML(){
+  const avail=xpAvailable();const minP=minRewardPrice();
+  let html=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+    <div style="font-size:12px;color:var(--muted);font-family:'DM Mono',monospace;">Available: <span style="color:var(--gold)">${avail} XP</span> · Min: <span style="color:var(--accent2)">${minP} XP</span></div>
+    <button class="add-task-btn" style="width:auto;margin-top:0;" onclick="openRewardModal()">＋ Create reward</button>
+  </div>
+  <button class="reward-gen-btn" id="gen-btn" onclick="generateReward()">✨ Auto-generate a reward idea & price</button>`;
+  const active=state.customRewards.filter(r=>!r.redeemed);
+  const redeemed=state.customRewards.filter(r=>r.redeemed);
+  if(!state.customRewards.length)return html+`<div class="empty"><span class="empty-icon">🎁</span>No rewards yet. Create one or auto-generate!</div>`;
+  if(active.length){
+    html+=`<div class="shop-section-title">🎁 Available</div><div class="rewards-grid">`;
+    active.forEach(r=>{
+      const canAfford=avail>=r.price;
+      html+=`<div class="reward-card"><button class="reward-del-btn" onclick="deleteReward(${r.id})">✕</button>
+        <div class="reward-card-icon">${r.emoji}</div>
+        <div class="reward-card-name">${esc(r.name)}</div>
+        ${r.desc?`<div class="reward-card-desc">${esc(r.desc)}</div>`:''}
+        <div class="reward-card-meta"><div class="reward-card-price">⚡ ${r.price} XP</div><span class="reward-card-type ${r.reusable?'reward-type-multi':'reward-type-once'}">${r.reusable?'♻ Reusable':'1× Use'}</span></div>
+        <button class="reward-redeem-btn" ${!canAfford?'disabled':''} onclick="redeemReward(${r.id})">${canAfford?'Redeem':'Need '+r.price+' XP'}</button>
+      </div>`;
+    });html+=`</div>`;
+  }
+  if(redeemed.length){
+    html+=`<div class="shop-section-title" style="margin-top:20px;">✓ Redeemed</div><div class="rewards-grid">`;
+    redeemed.forEach(r=>{html+=`<div class="reward-card" style="opacity:.4"><button class="reward-del-btn" onclick="deleteReward(${r.id})">✕</button><div class="reward-card-icon">${r.emoji}</div><div class="reward-card-name">${esc(r.name)}</div><div class="reward-card-meta"><div class="reward-card-price" style="color:var(--muted)">⚡ ${r.price} XP</div><span class="reward-card-type reward-type-redeemed">Redeemed</span></div></div>`;});
+    html+=`</div>`;
+  }
+  return html;
+}
+function redeemReward(id){const r=state.customRewards.find(x=>x.id===id);if(!r)return;if(xpAvailable()<r.price){showToast('Not enough XP!');return;}state.xpSpent+=r.price;if(!r.reusable)r.redeemed=true;save();showToast(`🎉 Enjoy: ${r.name}!`);renderContent();renderPlayer();}
+function deleteReward(id){state.customRewards=state.customRewards.filter(r=>r.id!==id);save();renderContent();}
+function generateReward(){
+  const btn=document.getElementById('gen-btn');if(!btn)return;btn.disabled=true;btn.innerHTML=`<div class="spinner"></div> Generating...`;
+  const pool=[
+    {emoji:'🎮',name:'1 hour of guilt-free gaming',desc:'No obligations, just play.',price:100,reusable:true},
+    {emoji:'🍕',name:'Order your favourite takeout',desc:"You earned it!",price:150,reusable:false},
+    {emoji:'😴',name:'Sleep in extra 30 mins',desc:'A well-deserved lie-in.',price:75,reusable:true},
+    {emoji:'🎬',name:'Movie of your choice',desc:'Pick anything, no judgment.',price:120,reusable:true},
+    {emoji:'🍦',name:'Treat yourself to ice cream',desc:'Your favourite flavour.',price:60,reusable:true},
+    {emoji:'🛁',name:'Long relaxing bath',desc:'Candles, music, the works.',price:80,reusable:true},
+    {emoji:'📱',name:'1 hour of guilt-free scrolling',desc:'No productivity, just chill.',price:75,reusable:true},
+    {emoji:'🍫',name:'Buy a snack you love',desc:"That treat you've been eyeing.",price:50,reusable:true},
+    {emoji:'🎧',name:'Full album uninterrupted',desc:'Headphones in, world out.',price:60,reusable:true},
+    {emoji:'🏖️',name:'A day trip somewhere fun',desc:'Plan it and go!',price:400,reusable:false},
+    {emoji:'🛍️',name:'Buy something small for yourself',desc:'Under a budget — treat yourself.',price:250,reusable:false},
+    {emoji:'✈️',name:'Weekend getaway',desc:'Book a short trip.',price:800,reusable:false},
+    {emoji:'🍔',name:'Fancy meal out',desc:"Go somewhere you wouldn't normally.",price:175,reusable:false},
+    {emoji:'🧘',name:'Full rest day',desc:'No guilt, full recovery.',price:300,reusable:false},
+    {emoji:'☕',name:'Coffee shop session',desc:'Your favourite café, your drink.',price:80,reusable:true},
+  ];
+  const existing=state.customRewards.map(r=>r.name.toLowerCase());
+  const avail=pool.filter(s=>!existing.includes(s.name.toLowerCase()));
+  const pick=avail.length?avail[Math.floor(Math.random()*avail.length)]:pool[Math.floor(Math.random()*pool.length)];
+  const minP=minRewardPrice();
+  const price=Math.max(minP,pick.price);
+  setTimeout(()=>{
+    state.customRewards.push({id:state.rewardNextId++,emoji:pick.emoji,name:pick.name,desc:pick.desc,price,reusable:pick.reusable,redeemed:false});
+    save();renderContent();showToast(`✨ Generated: "${pick.name}" for ${price} XP!`);
+  },800);
+}
+ 
+function renderBadgesHTML(){
+  const tier=getBikeTier();
+  const sc=Math.round(saveChanceForCurrentStreak()*100);
+  let html=`<div style="font-size:12px;color:var(--muted);margin-bottom:6px;">${state.unlockedBadges.length} / ${BADGE_DEFS.length} unlocked · ${state.claimedBadges.length} rewards claimed</div>`;
+  html+=`<div style="background:rgba(123,97,255,.07);border:1px solid rgba(123,97,255,.2);border-radius:8px;padding:9px 14px;font-size:12px;color:var(--accent2);margin-bottom:16px;">🛡️ Current save chance: <strong>${sc}%</strong> (${tier.name} + ${state.streak} day streak bonus)</div>`;
+  html+=`<div class="badges-grid">`;
+  BADGE_DEFS.forEach(b=>{
+    const unlocked=state.unlockedBadges.includes(b.id),claimed=state.claimedBadges.includes(b.id);
+    const rTag=b.reward.type==='xp'?'badge-reward-xp':'badge-reward-item';
+    let action='';
+    if(unlocked&&!claimed)action=`<button class="badge-claim-btn" onclick="claimBadgeReward('${b.id}')">Claim Reward</button>`;
+    else if(claimed)action=`<div class="badge-claimed-label">✓ Claimed</div>`;
+    html+=`<div class="badge-card ${unlocked?'unlocked':'locked'}">
+      <div class="badge-icon">${b.icon}</div>
+      <div class="badge-name">${b.name}</div>
+      <div class="badge-desc">${b.desc}</div>
+      <span class="badge-reward-tag ${rTag}">${b.reward.label}</span>
+      ${action}
+    </div>`;
+  });
+  return html+`</div>`;
+}
+ 
+// Static SVG for shop preview
+function buildBikeSVGStatic(t,fc,wc,kc,w,h){
+  const forkHTML=t===0?`<line x1="82" y1="28" x2="92" y2="56" stroke="${kc}" stroke-width="2.5" stroke-linecap="round"/>`
+    :`<line x1="80" y1="28" x2="90" y2="56" stroke="${kc}" stroke-width="3" stroke-linecap="round"/><line x1="84" y1="28" x2="94" y2="56" stroke="${kc}" stroke-width="3" stroke-linecap="round"/><rect x="79" y="34" width="16" height="5" rx="2.5" fill="${kc}" opacity=".7"/>`;
+  const rearShock=t>=2?`<line x1="55" y1="28" x2="45" y2="42" stroke="${kc}" stroke-width="4" stroke-linecap="round"/><circle cx="45" cy="42" r="4" fill="${kc}"/>`:'';
+  const tyreW=t===3?6:4;
+  const headX=t===3?78:82;
+  return`<svg viewBox="0 0 120 80" width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="28" cy="56" r="20" fill="none" stroke="${wc}" stroke-width="${tyreW}"/>
+    <circle cx="28" cy="56" r="3.5" fill="${wc}"/>
+    <line x1="28" y1="36" x2="28" y2="76" stroke="${wc}" stroke-width="1" opacity=".4"/>
+    <line x1="8" y1="56" x2="48" y2="56" stroke="${wc}" stroke-width="1" opacity=".4"/>
+    <line x1="14" y1="42" x2="42" y2="70" stroke="${wc}" stroke-width="1" opacity=".4"/>
+    <line x1="42" y1="42" x2="14" y2="70" stroke="${wc}" stroke-width="1" opacity=".4"/>
+    <circle cx="92" cy="56" r="20" fill="none" stroke="${wc}" stroke-width="${tyreW}"/>
+    <circle cx="92" cy="56" r="3.5" fill="${wc}"/>
+    <line x1="92" y1="36" x2="92" y2="76" stroke="${wc}" stroke-width="1" opacity=".4"/>
+    <line x1="72" y1="56" x2="112" y2="56" stroke="${wc}" stroke-width="1" opacity=".4"/>
+    <line x1="78" y1="42" x2="106" y2="70" stroke="${wc}" stroke-width="1" opacity=".4"/>
+    <line x1="106" y1="42" x2="78" y2="70" stroke="${wc}" stroke-width="1" opacity=".4"/>
+    ${rearShock}
+    <line x1="60" y1="54" x2="28" y2="56" stroke="${fc}" stroke-width="3.5" stroke-linecap="round"/>
+    <line x1="60" y1="54" x2="54" y2="24" stroke="${fc}" stroke-width="4" stroke-linecap="round"/>
+    <line x1="${headX}" y1="28" x2="60" y2="54" stroke="${fc}" stroke-width="4" stroke-linecap="round"/>
+    <line x1="54" y1="24" x2="${headX}" y2="28" stroke="${fc}" stroke-width="3.5" stroke-linecap="round"/>
+    <line x1="54" y1="24" x2="28" y2="56" stroke="${fc}" stroke-width="2.5" stroke-linecap="round"/>
+    <rect x="${headX-3}" y="22" width="6" height="12" rx="3" fill="#c4b5fd"/>
+    ${forkHTML}
+    <circle cx="60" cy="54" r="9" fill="none" stroke="${wc}" stroke-width="2"/>
+    <circle cx="60" cy="54" r="5" fill="${fc}" opacity=".8"/>
+    <line x1="54" y1="24" x2="52" y2="10" stroke="#c4b5fd" stroke-width="3" stroke-linecap="round"/>
+    <path d="M40 9 C44 5,56 5,62 9" fill="none" stroke="${wc}" stroke-width="${t===3?5:4}" stroke-linecap="round"/>
+    <line x1="${headX}" y1="22" x2="${headX+4}" y2="13" stroke="#c4b5fd" stroke-width="3" stroke-linecap="round"/>
+    <line x1="${headX+1}" y1="11" x2="${headX+15}" y2="11" stroke="${fc}" stroke-width="${t===3?4:3.5}" stroke-linecap="round"/>
+    <rect x="${headX+1}" y="8.5" width="5" height="5" rx="2" fill="${kc}"/>
+    <rect x="${headX+10}" y="8.5" width="5" height="5" rx="2" fill="${kc}"/>
+    <line x1="55" y1="62" x2="65" y2="62" stroke="${wc}" stroke-width="3" stroke-linecap="round"/>
+  </svg>`;
+}
+ 
+// ════════════════════════════════════════════
+//  TOGGLE / DELETE
+// ════════════════════════════════════════════
+function toggle(id){
+  const task=state.tasks.find(t=>t.id===id);if(!task)return;
+  const wasAlreadyAwarded=!!task.xpAwarded;
+  task.done=!task.done;
+ 
+  if(task.done && !wasAlreadyAwarded){
+    // First time completing — award XP (half if flagged)
+    const fullXp=XP_MAP[task.diff];
+    const gained=task.halfXp ? Math.floor(fullXp/2) : fullXp;
+    state.xp+=gained;state.xpTotal+=gained;state.totalDone++;
+    task.xpAwarded=true;
+    task.xpGained=gained; // remember exactly how much was given
+    if(task.diff==='hard')state.hardDone++;
+    let leveled=false,nl=state.level;
+    while(state.xp>=xpForLevel(state.level)){state.xp-=xpForLevel(state.level);state.level++;leveled=true;nl=state.level;}
+    showPopup('+'+gained+' xp');
+    if(task.halfXp) setTimeout(()=>showPopup('½ XP (flagged)'),400);
+    if(leveled)setTimeout(()=>showLevelUpModal(nl),400);
+    if(task.section==='daily')setTimeout(checkAndGrantStreak,200);
+    if(task.section==='addon')setTimeout(()=>{state.tasks=state.tasks.filter(t=>t.id!==id);save();render();},700);
+    checkBadges();
+  } else if(!task.done && wasAlreadyAwarded){
+    // Unticking: move the bike back on the trail by removing the XP from xpTotal
+    // (does NOT remove from level XP — level stays, only trail position moves back)
+    const xpBack = task.xpGained || XP_MAP[task.diff];
+    state.xpTotal = Math.max(0, state.xpTotal - xpBack);
+    task.xpAwarded=false; // allow re-award when re-ticked
+    task.xpGained=0;
+    showPopup(`-${xpBack} trail xp`);
+    showToast(`↩ Unticked — bike moved back ${xpBack} XP on the trail. Re-tick to earn it back.`);
+  }
+ 
+  save();render();
+}
+function del(id){state.tasks=state.tasks.filter(t=>t.id!==id);save();render();}
+ 
+// ════════════════════════════════════════════
+//  TASK MODAL
+// ════════════════════════════════════════════
+function openModal(section){
+  mSection=section;mDiff='easy';mDays=new Set();mEndDate=null;
+  document.getElementById('modal-input').value='';
+  document.getElementById('modal-input').classList.remove('error');
+  document.getElementById('dupe-msg').classList.remove('show');
+  document.getElementById('modal-heading').textContent=section==='daily'?'New Daily Quest':'New Add-on Task';
+  document.querySelectorAll('.diff-opt').forEach(e=>e.className='diff-opt');
+  document.querySelector('[data-diff="easy"]').classList.add('sel-easy');
+  document.querySelectorAll('.day-pill').forEach(p=>p.classList.remove('selected'));
+  const tab0=document.querySelectorAll('.sched-tab')[0];
+  if(section==='daily'){document.getElementById('schedule-field').style.display='block';tab0.style.display='';switchTab('days',true);}
+  else{document.getElementById('schedule-field').style.display='block';tab0.style.display='none';switchTab('calendar',true);}
+  document.getElementById('modal-overlay').classList.add('show');
+  setTimeout(()=>document.getElementById('modal-input').focus(),80);
+}
+function closeModal(){document.getElementById('modal-overlay').classList.remove('show');}
+function selectDiff(d){mDiff=d;document.querySelectorAll('.diff-opt').forEach(e=>e.className='diff-opt');document.querySelector(`[data-diff="${d}"]`).classList.add(`sel-${d}`);}
+function toggleDay(day){
+  const pill=document.querySelector(`.day-pill[data-day="${day}"]`);
+  if(day==='daily'){
+    if(mDays.has('daily')){mDays.delete('daily');pill.classList.remove('selected');}
+    else{mDays=new Set(['daily']);document.querySelectorAll('.day-pill').forEach(p=>p.classList.remove('selected'));pill.classList.add('selected');}
+  }else{
+    if(mDays.has('daily')){mDays.delete('daily');document.querySelector('.day-pill[data-day="daily"]').classList.remove('selected');}
+    if(mDays.has(day)){mDays.delete(day);pill.classList.remove('selected');}else{mDays.add(day);pill.classList.add('selected');}
+  }
+}
+function switchTab(tab,silent=false){
+  mTab=tab;
+  document.querySelectorAll('.sched-tab').forEach((b,i)=>b.classList.toggle('active',(i===0&&tab==='days')||(i===1&&tab==='calendar')));
+  document.getElementById('tab-days').style.display=tab==='days'?'block':'none';
+  document.getElementById('tab-calendar').style.display=tab==='calendar'?'block':'none';
+  if(tab==='calendar'&&!silent)renderCal();
+}
+function renderCal(){
+  const now=new Date();
+  if(!calY){calY=now.getFullYear();calM=now.getMonth();}
+  document.getElementById('cal-label').textContent=`${MONTHS[calM]} ${calY}`;
+  const first=new Date(calY,calM,1).getDay(),days=new Date(calY,calM+1,0).getDate();
+  const tD=now.getDate(),tM=now.getMonth(),tY=now.getFullYear();
+  let html=['S','M','T','W','T','F','S'].map(d=>`<div class="cal-day-name">${d}</div>`).join('');
+  for(let i=0;i<first;i++)html+=`<div class="cal-cell empty-cell"></div>`;
+  for(let d=1;d<=days;d++){
+    const ds=`${calY}-${pad(calM+1)}-${pad(d)}`;
+    const past=new Date(calY,calM,d)<new Date(tY,tM,tD);
+    html+=`<div class="cal-cell${past?' past':''}${d===tD&&calM===tM&&calY===tY?' today':''}${mEndDate===ds?' selected':''}" onclick="pickDate('${ds}')">${d}</div>`;
+  }
+  document.getElementById('cal-grid').innerHTML=html;
+}
+function pickDate(ds){mEndDate=ds;renderCal();}
+function calNav(dir){calM+=dir;if(calM<0){calM=11;calY--;}if(calM>11){calM=0;calY++;}renderCal();}
+// ════════════════════════════════════════════
+//  AI CRITIQUE SYSTEM
+// ════════════════════════════════════════════
+let critiqueTaskBuffer = null; // task being evaluated right now
+ 
+async function runAICritique(task){
+  // Build context: tasks completed today + existing tasks for similarity check
+  const todayDone = state.tasks.filter(t=>t.done&&t.xpAwarded).map(t=>`"${t.text}" (${t.diff})`);
+  const existing  = state.tasks.filter(t=>!t.done).map(t=>`"${t.text}"`);
+  const diffLabel = {easy:'Easy (light effort, ~5–15 min)',medium:'Medium (meaningful effort, ~30 min–1 hr)',hard:'Hard (significant effort, multi-hour or demanding)'}[task.diff];
+ 
+  const prompt=`You are a productivity verification agent embedded in a gamified to-do app. Your job is to decide whether a submitted task is legitimate and whether its difficulty rating is honest.
+ 
+You are balanced-to-strict: you give benefit of the doubt for tasks that are clearly real but poorly worded, but you firmly reject obvious abuse (trivial tasks, duplicates, vague filler, spam).
+ 
+TASK SUBMITTED: "${task.text}"
+DIFFICULTY CLAIMED: ${diffLabel}
+SECTION: ${task.section==='daily'?'Daily (recurring)':'Add-on (one-off)'}
+ 
+TASKS ALREADY COMPLETED TODAY:
+${todayDone.length?todayDone.join(', '):'(none yet)'}
+ 
+EXISTING TASKS ON BOARD:
+${existing.length?existing.slice(0,10).join(', '):'(none)'}
+ 
+Evaluate the task on these three criteria:
+1. SPECIFICITY — Is it specific enough to be verifiable? Vague tasks like "be productive" or "do stuff" should fail. Tasks that are brief but clear like "feed the dog" or "30 min run" are fine.
+2. DIFFICULTY MATCH — Does the effort required match the claimed difficulty? Awarding Hard XP for a trivial task like "drink water" is abuse. Be fair but don't over-penalise.
+3. SIMILARITY — Is this suspiciously similar to a task already completed today? Obvious duplicates or near-duplicates to earn extra XP should fail.
+ 
+Respond with ONLY a valid JSON object in this exact format (no markdown, no extra text):
+{
+  "verdict": "approved" | "warning" | "rejected",
+  "summary": "One sentence explaining the verdict in plain English.",
+  "checks": [
+    {"label": "Specific enough to verify", "pass": true|false, "note": "brief note"},
+    {"label": "Difficulty matches effort", "pass": true|false, "note": "brief note"},
+    {"label": "Not a duplicate", "pass": true|false, "note": "brief note"}
+  ]
+}
+ 
+Rules:
+- "approved" = all checks pass or minor issues that don't affect legitimacy
+- "warning" = one check fails but task seems genuine; player sees reasoning and can choose to proceed or edit
+- "rejected" = task is clearly abusive, trivial, duplicate, or nonsensical
+- Keep all notes under 12 words
+- Do not be overly harsh on casual wording — "fed dog" is fine, "task1" is not`;
+ 
+  const res = await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:'claude-sonnet-4-20250514',
+      max_tokens:600,
+      messages:[{role:'user',content:prompt}]
+    })
+  });
+  const data = await res.json();
+  const raw = data.content?.[0]?.text||'{}';
+  // Strip any accidental markdown fences
+  const clean = raw.replace(/```json|```/g,'').trim();
+  return JSON.parse(clean);
+}
+ 
+function submitTask(){
+  const inp=document.getElementById('modal-input');
+  const text=inp.value.trim();
+  if(!text){inp.focus();return;}
+ 
+  // Check for duplicates across all current tasks only
+  const dupe=state.tasks.some(t=>t.text.trim().toLowerCase()===text.toLowerCase());
+  if(dupe){
+    inp.classList.add('error');
+    document.getElementById('dupe-msg').classList.add('show');
+    setTimeout(()=>{inp.classList.remove('error');document.getElementById('dupe-msg').classList.remove('show');},2000);
+    return;
+  }
+ 
+  const days=(mSection==='daily'&&mTab==='days')?(mDays.size?[...mDays]:['daily']):[];
+  const task={
+    id:state.nextId++, text, diff:mDiff,
+    section:mSection, days, endDate:mEndDate||null,
+    done:false, xpAwarded:false
+  };
+ 
+  closeModal();
+  openCritiqueOverlay(task);
+}
+ 
+function openCritiqueOverlay(task){
+  critiqueTaskBuffer = task;
+ 
+  // Reset UI
+  document.getElementById('critique-task-name').textContent = task.text;
+  document.getElementById('critique-task-diff').textContent =
+    {easy:'Easy · +10 XP',medium:'Medium · +25 XP',hard:'Hard · +50 XP'}[task.diff]+
+    ' · '+task.section;
+  document.getElementById('critique-thinking').style.display='flex';
+  document.getElementById('critique-result').style.display='none';
+  document.getElementById('critique-xp').style.display='none';
+  document.getElementById('critique-accept-btn').style.display='none';
+  document.getElementById('critique-dismiss-btn').style.display='none';
+  document.getElementById('critique-retry-btn').style.display='none';
+ 
+  document.getElementById('critique-overlay').classList.add('show');
+ 
+  // Fire AI
+  runAICritique(task).then(result=>{
+    showCritiqueResult(task, result);
+  }).catch(err=>{
+    // On API error — show a fallback warning
+    showCritiqueResult(task,{
+      verdict:'warning',
+      summary:'Could not reach the AI critique service. You can still add this task, but make sure it is legitimate.',
+      checks:[
+        {label:'Specific enough to verify',pass:true,note:'Could not verify — API error'},
+        {label:'Difficulty matches effort',pass:true,note:'Could not verify — API error'},
+        {label:'Not a duplicate',pass:true,note:'Checked locally — looks unique'},
+      ]
+    });
+  });
+}
+ 
+function showCritiqueResult(task, result){
+  document.getElementById('critique-thinking').style.display='none';
+  document.getElementById('critique-result').style.display='block';
+ 
+  const isApproved = result.verdict==='approved';
+  const isWarning  = result.verdict==='warning';
+  const isRejected = result.verdict==='rejected';
+ 
+  // Verdict box
+  const verdictColors = {
+    approved:'background:rgba(61,220,132,.1);border:1px solid rgba(61,220,132,.3);color:#3ddc84;',
+    warning: 'background:rgba(255,159,67,.1);border:1px solid rgba(255,159,67,.3);color:#ff9f43;',
+    rejected:'background:rgba(255,95,95,.1);border:1px solid rgba(255,95,95,.3);color:#ff5f5f;',
+  };
+  const verdictIcons = {approved:'✓ Approved',warning:'⚠ Warning',rejected:'✕ Rejected'};
+  document.getElementById('critique-verdict-box').innerHTML =
+    `<div style="${verdictColors[result.verdict]}border-radius:8px;padding:10px 14px;">
+       <div style="font-weight:600;font-size:13px;margin-bottom:4px;">${verdictIcons[result.verdict]}</div>
+       <div style="font-size:12px;line-height:1.5;">${esc(result.summary)}</div>
+     </div>`;
+ 
+  // Check pills
+  document.getElementById('critique-checks').innerHTML = (result.checks||[]).map(c=>
+    `<div style="display:flex;align-items:flex-start;gap:8px;font-size:12px;">
+       <span style="padding:1px 8px;border-radius:4px;font-size:10px;font-family:'DM Mono',monospace;flex-shrink:0;margin-top:1px;
+         ${c.pass?'background:rgba(61,220,132,.1);color:#3ddc84;border:1px solid rgba(61,220,132,.2);'
+                 :'background:rgba(255,95,95,.1);color:#ff5f5f;border:1px solid rgba(255,95,95,.2);'}">
+         ${c.pass?'✓':'✕'} ${esc(c.label)}
+       </span>
+       <span style="color:var(--muted);font-size:11px;padding-top:2px;">${esc(c.note||'')}</span>
+     </div>`
+  ).join('');
+ 
+  // XP note
+  const xpEl = document.getElementById('critique-xp');
+  const xpFull = {easy:10,medium:25,hard:50}[task.diff];
+  const xpHalf = Math.floor(xpFull/2);
+  if(isApproved){
+    xpEl.style.display='block';
+    xpEl.innerHTML=`<div style="margin-top:10px;font-size:11px;color:var(--muted2);font-family:'DM Mono',monospace;">✓ Full XP awarded on completion: +${xpFull} XP</div>`;
+  } else if(isWarning){
+    xpEl.style.display='block';
+    xpEl.innerHTML=`<div style="margin-top:10px;font-size:11px;color:var(--orange);font-family:'DM Mono',monospace;">⚠ Adding anyway gives <strong>half XP: +${xpHalf}</strong> instead of +${xpFull}</div>`;
+  } else {
+    xpEl.style.display='none';
+  }
+ 
+  // Store half-XP flag on task buffer for warning case
+  if(critiqueTaskBuffer) critiqueTaskBuffer._halfXp = isWarning;
+ 
+  // Buttons — always shown in same order: Cancel | Edit & Retry | Add / Add (Half XP)
+  const cancelBtn = document.getElementById('critique-dismiss-btn');
+  const retryBtn  = document.getElementById('critique-retry-btn');
+  const acceptBtn = document.getElementById('critique-accept-btn');
+ 
+  // Reset all
+  cancelBtn.style.display='none';
+  retryBtn.style.display='none';
+  acceptBtn.style.display='none';
+ 
+  if(isApproved){
+    cancelBtn.style.display='inline-block'; cancelBtn.textContent='Cancel';
+    retryBtn.style.display='inline-block';  retryBtn.textContent='Edit';
+    acceptBtn.style.display='inline-block'; acceptBtn.textContent='Add';
+  } else if(isWarning){
+    retryBtn.style.display='inline-block';  retryBtn.textContent='Edit & Retry';
+    acceptBtn.style.display='inline-block'; acceptBtn.textContent=`Add (½ XP · +${xpHalf})`;
+  } else {
+    // Rejected — only edit & retry
+    retryBtn.style.display='inline-block'; retryBtn.textContent='Edit & Retry';
+    cancelBtn.style.display='inline-block'; cancelBtn.textContent='Dismiss';
+  }
+ 
+  // Save to history
+  if(!state.critiqueHistory) state.critiqueHistory=[];
+  state.critiqueHistory.push({
+    text:task.text, diff:task.diff, section:task.section,
+    verdict:result.verdict, reasoning:result.summary, checks:result.checks||[],
+    date:todayStr()
+  });
+  // Keep last 30
+  if(state.critiqueHistory.length>30) state.critiqueHistory=state.critiqueHistory.slice(-30);
+  save();
+}
+ 
+function acceptCritique(){
+  if(!critiqueTaskBuffer)return;
+  const task = critiqueTaskBuffer;
+  // If added despite a warning, mark for half XP
+  if(task._halfXp){
+    task.halfXp = true;
+    delete task._halfXp;
+  }
+  state.tasks.push(task);
+  critiqueTaskBuffer=null;
+  document.getElementById('critique-overlay').classList.remove('show');
+  save();render();
+  showToast(task.halfXp ? '⚠ Task added at half XP — complete it to earn the reduced amount.' : '✅ Task added! Complete it to earn full XP.');
+}
+ 
+function dismissCritique(){
+  critiqueTaskBuffer=null;
+  document.getElementById('critique-overlay').classList.remove('show');
+}
+ 
+function retryCritique(){
+  document.getElementById('critique-overlay').classList.remove('show');
+  // Re-open the add task modal with the text pre-filled
+  const task=critiqueTaskBuffer;
+  critiqueTaskBuffer=null;
+  if(!task)return;
+  openModal(task.section);
+  setTimeout(()=>{
+    document.getElementById('modal-input').value=task.text;
+    selectDiff(task.diff);
+  },100);
+}
+ 
+// ════════════════════════════════════════════
+//  REWARD MODAL
+// ════════════════════════════════════════════
+function openRewardModal(){
+  rEmoji='🎁';
+  document.getElementById('reward-name-input').value='';
+  document.getElementById('reward-desc-input').value='';
+  const minP=minRewardPrice();
+  const slider=document.getElementById('price-slider');
+  slider.min=minP;slider.value=Math.max(minP,100);
+  document.getElementById('price-min-label').textContent=minP+' XP';
+  updatePriceDisplay();
+  document.getElementById('reward-type-toggle').checked=false;updateRewardTypeLabel();
+  document.getElementById('emoji-grid').innerHTML=REWARD_EMOJIS.map(e=>`<div class="emoji-btn${e===rEmoji?' sel':''}" onclick="pickEmoji('${e}')">${e}</div>`).join('');
+  document.getElementById('reward-modal-overlay').classList.add('show');
+  setTimeout(()=>document.getElementById('reward-name-input').focus(),80);
+}
+function closeRewardModal(){document.getElementById('reward-modal-overlay').classList.remove('show');}
+function pickEmoji(e){rEmoji=e;document.querySelectorAll('.emoji-btn').forEach(b=>b.classList.toggle('sel',b.textContent===e));}
+function updatePriceDisplay(){document.getElementById('price-display').textContent=document.getElementById('price-slider').value+' XP';}
+function updateRewardTypeLabel(){const r=document.getElementById('reward-type-toggle').checked;document.getElementById('reward-type-label').textContent=r?'Reusable':'One-time use';document.getElementById('reward-type-sub').textContent=r?'Can be redeemed multiple times':'Disappears after redemption';}
+function submitReward(){
+  const name=document.getElementById('reward-name-input').value.trim();
+  const desc=document.getElementById('reward-desc-input').value.trim();
+  const price=parseInt(document.getElementById('price-slider').value);
+  const reusable=document.getElementById('reward-type-toggle').checked;
+  if(!name){document.getElementById('reward-name-input').classList.add('error');setTimeout(()=>document.getElementById('reward-name-input').classList.remove('error'),1500);return;}
+  if(price<minRewardPrice()){showToast(`Min reward cost is ${minRewardPrice()} XP at your level.`);return;}
+  state.customRewards.push({id:state.rewardNextId++,emoji:rEmoji,name,desc,price,reusable,redeemed:false});
+  closeRewardModal();save();renderContent();
+}
+ 
+// ════════════════════════════════════════════
+//  LEVEL UP MODAL
+// ════════════════════════════════════════════
+function showLevelUpModal(level){
+  const title=LEVELS[Math.min(level-1,LEVELS.length-1)];
+  const tier=getBikeTier();
+  document.getElementById('lu-emoji').textContent=tier.icon;
+  document.getElementById('lu-title').textContent=`Level ${level} Unlocked!`;
+  document.getElementById('lu-sub').textContent=`You are now a ${title}`;
+  const newItems=(LEVEL_UNLOCKS[level]||[]).map(id=>getShopItem(id)).filter(Boolean);
+  const tierChange=BIKE_TIERS.find(t=>t.minLevel===level);
+  let html='';
+  if(tierChange)html+=`<div class="levelup-reward-item"><span style="font-size:20px">${tierChange.icon}</span><div><div style="font-weight:600;font-size:13px">Bike upgraded to ${tierChange.name}!</div><div style="font-size:11px;color:var(--muted)">Save chance: ${tierChange.saveChance*100}% base</div></div></div>`;
+  if(newItems.length)html+=newItems.map(i=>`<div class="levelup-reward-item"><span style="font-size:20px">${i.icon}</span><div><div style="font-weight:600;font-size:13px">${i.name}</div><div style="font-size:11px;color:var(--muted)">${i.desc}</div></div></div>`).join('');
+  document.getElementById('lu-rewards').innerHTML=html;
+  document.getElementById('levelup-overlay').classList.add('show');
+}
+function closeLevelUp(){document.getElementById('levelup-overlay').classList.remove('show');}
+ 
+// ════════════════════════════════════════════
+//  POPUPS / TOAST
+// ════════════════════════════════════════════
+function showPopup(text){
+  const el=document.createElement('div');el.className='popup';el.textContent=text;
+  el.style.left=(28+Math.random()*44)+'%';el.style.top='110px';
+  document.body.appendChild(el);setTimeout(()=>el.remove(),1200);
+}
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),4500);
+}
+ 
+// ════════════════════════════════════════════
+//  NAV + EVENTS
+// ════════════════════════════════════════════
+ 
+// ── MOBILE DRAWER ──
+function openDrawer(){
+  document.querySelector('.sidebar').classList.add('open');
+  document.getElementById('drawer-overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeDrawer(){
+  document.querySelector('.sidebar').classList.remove('open');
+  document.getElementById('drawer-overlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+document.getElementById('menu-btn').addEventListener('click', openDrawer);
+document.getElementById('drawer-overlay').addEventListener('click', closeDrawer);
+ 
+// ── VIEW SWITCHING (shared between sidebar + bottom nav) ──
+function switchView(view){
+  state.currentView = view;
+  // Sidebar items
+  document.querySelectorAll('.nav-item[data-view]').forEach(b=>{
+    b.classList.toggle('active', b.dataset.view===view);
+  });
+  // Bottom nav items
+  document.querySelectorAll('.tab-btn[data-view]').forEach(b=>{
+    b.classList.toggle('active', b.dataset.view===view);
+  });
+  closeDrawer();
+  render();
+}
+ 
+document.querySelectorAll('.nav-item[data-view]').forEach(btn=>{
+  btn.addEventListener('click',()=>switchView(btn.dataset.view));
+});
+document.querySelectorAll('.tab-btn[data-view]').forEach(btn=>{
+  btn.addEventListener('click',()=>switchView(btn.dataset.view));
+});
+document.getElementById('modal-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('modal-overlay'))closeModal();});
+document.getElementById('reward-modal-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('reward-modal-overlay'))closeRewardModal();});
+document.getElementById('levelup-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('levelup-overlay'))closeLevelUp();});
+document.getElementById('modal-input').addEventListener('keydown',e=>{if(e.key==='Enter')submitTask();if(e.key==='Escape')closeModal();});
+document.getElementById('reward-name-input').addEventListener('keydown',e=>{if(e.key==='Escape')closeRewardModal();});
+window.addEventListener('resize',()=>{resizeCanvas();});
+ 
+// ════════════════════════════════════════════
+//  EXPORT / IMPORT
+// ════════════════════════════════════════════
+function exportSave(){
+  const data = JSON.stringify(state, null, 2);
+  const blob = new Blob([data], {type:'application/json'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const date = new Date();
+  const stamp= `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+  a.href     = url;
+  a.download = `quest-board-save-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('✅ Save exported! Keep this file somewhere safe.');
+}
+ 
+function importSave(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      // Basic validation — must have at least tasks and xpTotal
+      if(typeof parsed !== 'object' || !Array.isArray(parsed.tasks)){
+        showToast('❌ Invalid save file — could not restore.');
+        return;
+      }
+      // Merge with defaults so new fields don't break old saves
+      state = {
+        tasks:[], xp:0, xpTotal:0, xpSpent:0, xpSpentOnShop:0, level:1,
+        streak:0, totalDone:0, hardDone:0, nextId:1,
+        streakDate:null, currentView:'today',
+        owned:['frame_purple','wheel_stock','fork_stock','theme_purple'],
+        equipped:{frame:'frame_purple',wheel:'wheel_stock',fork:'fork_stock',theme:'theme_purple'},
+        unlockedBadges:[], claimedBadges:[],
+        customRewards:[], rewardNextId:1,
+        savedStreakDate:null, critiqueHistory:[],
+        ...parsed
+      };
+      save();
+      render();
+      showToast('✅ Save restored successfully!');
+      closeDrawer();
+    } catch(err){
+      showToast('❌ Could not read file — make sure it\'s a valid Quest Board save.');
+    }
+  };
+  reader.readAsText(file);
+  // Reset input so the same file can be re-imported if needed
+  event.target.value='';
+}
+ 
+// ════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════
+const _n=new Date();calY=_n.getFullYear();calM=_n.getMonth();
+load();
+const _t=todayStr();
+if(!state.critiqueHistory)state.critiqueHistory=[];state.tasks=state.tasks.filter(t=>!t.endDate||t.endDate>=_t);
+if(!state.owned)state.owned=['frame_purple','wheel_stock','fork_stock','theme_purple'];
+if(!state.equipped)state.equipped={frame:'frame_purple',wheel:'wheel_stock',fork:'fork_stock',theme:'theme_purple'};
+if(!state.xpTotal)state.xpTotal=state.xp||0;
+if(!state.xpSpent)state.xpSpent=0;
+if(!state.xpSpentOnShop)state.xpSpentOnShop=0;
+if(!state.hardDone)state.hardDone=0;
+if(!state.unlockedBadges)state.unlockedBadges=[];
+if(!state.claimedBadges)state.claimedBadges=[];
+if(!state.customRewards)state.customRewards=[];
+if(!state.rewardNextId)state.rewardNextId=1;
+if(!state.savedStreakDate)state.savedStreakDate=null;
+save();
+ 
+// If streak was earned today, start in celebration mode
+if(streakEarnedToday()){bike.celebrating=true;celebrationTimer=300;}
+ 
+initBg();
+resizeCanvas();
+animLoop();
+render();
+scheduleMidnight();
+setTimeout(checkMissedMidnight,1500);
+</script>
+</body>
+</html>
+
+
+
